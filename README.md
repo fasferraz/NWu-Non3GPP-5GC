@@ -37,7 +37,26 @@ This applications supports currently the following RFCs and options:
 
 https://www.iana.org/assignments/ikev2-parameters/ikev2-parameters.xhtml#ikev2-parameters-6
 
+The next picture shows the authentication flow for non-3GPP access in 5G:
 
+<p align="center"><img src="images/non3gpp_untrusted_authentication.png" width="90%"></p>
+
+
+There are two methods for authentication:
+
+- EAP-AKA':
+
+<p align="center"><img src="images/eap_aka_prime_authentication.png" width="70%"></p>
+
+
+or 
+- 5G-AKA:
+
+<p align="center"><img src="images/5g_aka_authentication.png" width="70%"></p>
+
+
+
+----
 
 The application has 4 distinct processes:
 - Main process that handles the IKEv2 flow states
