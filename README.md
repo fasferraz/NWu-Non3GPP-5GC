@@ -1,7 +1,137 @@
 # NWu-Non3GPP-5GC
 NWu IKEv2/IPSec Dialer for 5GC / N3IWF
 
-(...in progress)
+This is a NWu and SWu client emulator done in python3 that establishes an IKEv2/IPSec tunnel with an N3IWF or ePDG.
+This application implements not only the control plane of NWu and SWu (IKEv2) but also the user plane (IPSec).
+
+To interact with a real N3IWF or ePDG you need to get credentials from the USIM to derive the keys needed for 5G-AKA, EAP-AKA' or EAP-AKA, so once again you need to have a modem that supports the AT command AT+CSIM, or a SmartCard reader, or even through an https server (see https://github.com/fasferraz/USIM-https-server).
+
+Note: If no Modem/SmartCard Reader/HTTPS Server then a default CK, IK and RES will be used (check corresponding variables inside the code)
+
+For authentication the application also accepts Ki and OP/OPC for Milenage operation (usefull for testing with developments like open5gs or free5gc, where the USIM parameters are defined in the HSS/UDR).
+
+
+NWu is the interface between UE and the N3IWF as defined by the 3GPP, and is an IKEv2 based protocol with some minor modifications that can be found in 3GPP 33.501 and 24.502. The IKEv2 control plane is used to help perform authentication, establish SA Child, either the signalling SA Child or the User Plane SA Child.
+
+This application can use any network type (Wifi, Fixed, Mobile) to establish an IKEv2 Tunnel towards the N3IWF or ePDG and can be used in a more broader way than just the VoWifi scenario, since any DDN/APN can be requested. 
+The applications outputs every single KEY and parameter used in the IKEv2 and IPSec processes, which allow us to decode the corresponding traces in wireshark if needed. 
+
+
+
+This applications supports currently the following RFCs and options:
+- IKEv2 RFC 5996
+- EAP-AKA Authentication RFC 4187
+- EAP-AKA' Authentication RFC 5448
+- IKEv2 Encryption: AES-CBC-128 and AES-CBC-256 and NULL
+- IKEv2 Pseudo Random Function: PRF-HMAC-MD5, PRF-HMAC-SHA1, PRF-HMAC-SHA2-256, PRF-HMAC-SHA2-384 and PRF-HMAC-SHA2-512
+- IKEv2 Integrity: HMAC-MD5-96, HMAC-SHA1-96, HMAC-SHA2-256-128, HMAC-SHA2-384-192 and HMAC-SHA2-512-256
+- Diffie-Hellman Group: 1, 2, 5, 14, 15, 16, 17 and 18 
+- IPSec Encryption: AES-CBC-128, AES-CBC-256, AES-GCM-8, AES-CGM-12, AES-GCM-16 and NULL
+- No Certificates
+- NAT-T Detection
+- IKEv2 over UDP port 500 or 4500
+- IPSec over ESP or UDP port 4500
+- Fast-Reauthentication (currently only supported for SWu)
+- IKE and IPSec Rekeying (currently ony supported for SWu)
+- 5G-AKA or EAP-AKA' authentication methods with N3IWF for 5G
+
+https://www.iana.org/assignments/ikev2-parameters/ikev2-parameters.xhtml#ikev2-parameters-6
+
+
+
+The application has 4 distinct processes:
+- Main process that handles the IKEv2 flow states
+- After establishing the initial SA Child for IPSec (signalling SA Child for NWu or user plane SA child for SWu) three additional processes are created to handle the IPSec Encryption/Decryption:
+- IPSec Encoder: 
+    - Gets user data from tunnel interface, encrypts and sends it to N3IWF/ePDG
+    - Receives info from main process to create/update/delete SA Child
+- IPSec Decoder:
+    - Gets encrypted data from N3IWF/ePDG, decrypts it and sends it to the tunnel interface
+    - Sends decrypted IKEv2 message to main process (with NAT Traversal since IKEv2 messages are also received in UDP port 4500)
+- TCP process:
+    - Send and receive NAS messages to/from N3IWF, transfered through the signalling SA child
+    - Send and receive NAS messages to/from Main process
+   
+
+The next picture shows an high-level description of this:
+
+<p align="center"><img src="images/NWu_Emulator.png" width="100%"></p>
+
+
+
+These are the required modules needed for python3 in order to be able to run the application:
+
+```
+import serial
+import struct
+import socket
+import random
+import time
+import select
+import sys
+import os
+import fcntl
+import subprocess
+import multiprocessing
+import requests
+
+from optparse import OptionParser
+from binascii import hexlify, unhexlify
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import dh
+from cryptography.hazmat.primitives import hashes, hmac
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+from Crypto.Cipher import AES
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+from smartcard.System import readers
+from smartcard.util import toHexString,toBytes
+
+from card.USIM import *
+
+from CryptoMobile.Milenage import Milenage
+
+from gNAS import *
+from gSECURITY import *
+```
+Note: I added the card.USIM module because it handles much better blank USIM cards bought in eBay or AliExprees, than my old USIM interaction functions.
+
+
+These are the options currently available when starting the app:
+
+```
+root@ubuntu# python3 nwu_emulator.py -h
+Usage: nwu_emulator.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -m MODEM, --modem=MODEM
+                        modem port (i.e. COMX, or /dev/ttyUSBX), smartcard
+                        reader index (0, 1, 2, ...), or server for https
+  -s SOURCE_ADDR, --source=SOURCE_ADDR
+                        IP address of source interface used for IKE/IPSEC
+  -d DESTINATION_ADDR, --dest=DESTINATION_ADDR
+                        ip address or fqdn of ePDG
+  -a APN, --apn=APN     APN to use
+  -g GATEWAY_IP_ADDRESS, --gateway_ip_address=GATEWAY_IP_ADDRESS
+                        gateway IP address
+  -I IMSI, --imsi=IMSI  IMSI
+  -E IMEI, --imei=IMEI  IMEI
+  -M MCC, --mcc=MCC     MCC of ePDG (3 digits)
+  -N MNC, --mnc=MNC     MNC of ePDG (3 digits)
+  -K KI, --ki=KI        ki for Milenage (if not using option -m)
+  -P OP, --op=OP        op for Milenage (if not using option -m)
+  -C OPC, --opc=OPC     opc for Milenage (if not using option -m)
+  -T INTERFACE_TYPE, --type=INTERFACE_TYPE
+                        SWU or NWU interface. (By default is NWU)
+  -F, --free5gc-core    if using non compliant R16 free5gc N3IWF
+  -u FREE5GC_USERPLANE_IP_ADDRESS, --userplane-ip-address=FREE5GC_USERPLANE_IP_ADDRESS
+                        userplane IP address (for non compliant free5gc N3IWF)
+
+```
+
 
 Example with EAP-AKA' Authentication (I needed to change several files in free5GC to make it work...):
 
@@ -11,17 +141,6 @@ INTERFACE_TYPE 1
 
 STATE 1:
 -------
-NAT SOURCE 854046b0c728ce20cc492ef5c1bf8072cb56d7df
-NAT DESTINATION e45afe1d291c4cf5c5a9ae263e08f62400dbeeed
-sending IKE_SA_INIT
-
-Received IKE message decoded:
-[[41, [0, 17, b'', b'\x00\x0e']]]
-received IKE_SA_INIT
-REPEAT_STATE : INVALID_KE_PAYLOAD
-
-STATE 1 (retry):
-------- -------
 NAT SOURCE 854046b0c728ce20cc492ef5c1bf8072cb56d7df
 NAT DESTINATION e45afe1d291c4cf5c5a9ae263e08f62400dbeeed
 sending IKE_SA_INIT
@@ -176,18 +295,7 @@ root@ubuntu:/home/fabricio# python3 nwu_emulator.py  -a internet -d 172.16.62.13
 INTERFACE_TYPE 1
 
 STATE 1:
--------
-NAT SOURCE 954715cd38c93802b8bb33df4a2858c72d2274bf
-NAT DESTINATION 6306ead29e8bd997983784e1b4c3f17310ec9fec
-sending IKE_SA_INIT
-
-Received IKE message decoded:
-[[41, [0, 17, b'', b'\x00\x0e']]]
-received IKE_SA_INIT
-REPEAT_STATE : INVALID_KE_PAYLOAD
-
-STATE 1 (retry):
-------- -------
+------- 
 NAT SOURCE 954715cd38c93802b8bb33df4a2858c72d2274bf
 NAT DESTINATION 6306ead29e8bd997983784e1b4c3f17310ec9fec
 sending IKE_SA_INIT
