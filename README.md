@@ -1,8 +1,8 @@
-# NWu-Non3GPP-5GC
-NWu IKEv2/IPSec Dialer for 5GC / N3IWF
+# NWu-Non3GPP-5GC client
+NWu IKEv2/IPSec Client Dialer for 5GC-N3IWF
 
-This is a NWu and SWu client emulator done in python3 that establishes an IKEv2/IPSec tunnel with an N3IWF or ePDG.
-This application implements not only the control plane of NWu and SWu (IKEv2) but also the user plane (IPSec).
+This is a NWu and SWu client emulator done in python3 that establishes an IKEv2/IPSec tunnel(s) with N3IWF or ePDG.
+This application implements not only the control plane of NWu and SWu (IKEv2 and first SA child (for NWu)) but also the user plane (IPSec).
 
 To interact with a real N3IWF or ePDG you need to get credentials from the USIM to derive the keys needed for 5G-AKA, EAP-AKA' or EAP-AKA, so once again you need to have a modem that supports the AT command AT+CSIM, or a SmartCard reader, or even through an https server (see https://github.com/fasferraz/USIM-https-server).
 
@@ -11,7 +11,7 @@ Note: If no Modem/SmartCard Reader/HTTPS Server then a default CK, IK and RES wi
 For authentication the application also accepts Ki and OP/OPC for Milenage operation (usefull for testing with developments like open5gs or free5gc, where the USIM parameters are defined in the HSS/UDR).
 
 
-NWu is the interface between UE and the N3IWF as defined by the 3GPP, and is an IKEv2 based protocol with some minor modifications that can be found in 3GPP 33.501 and 24.502. The IKEv2 control plane is used to help perform authentication, establish SA Child, either the signalling SA Child or the User Plane SA Child.
+NWu is the interface between UE and the N3IWF as defined by the 3GPP, and is an IKEv2 based protocol with some minor modifications that can be found in 3GPP 33.501, 24.501 and 24.502. The IKEv2 control plane is used to help perform authentication, establish SA Child, either the signalling SA Child or the User Plane SA Child.
 
 This application can use any network type (Wifi, Fixed, Mobile) to establish an IKEv2 Tunnel towards the N3IWF or ePDG and can be used in a more broader way than just the VoWifi scenario, since any DDN/APN can be requested. 
 The applications outputs every single KEY and parameter used in the IKEv2 and IPSec processes, which allow us to decode the corresponding traces in wireshark if needed. 
@@ -151,6 +151,24 @@ Options:
 
 ```
 
+
+The option -F is used when using this application with Free5GC 5G Core.
+There are some bugs in free5GC, and I needed to adapt to those bugs to make my application work. 
+This was needed, since this was the only open 5G Core I know with N3IWF implementation.
+
+Nevertheless, I implemented the app to comply with R16 standards, althoug I never test it against a N3IWF fully compliant.
+
+Some free5GC issues:
+-------------------
+
+- Does not send the PDU Session Establishment Accept to the UE through signaling SA child. Only creates the userplane SA child
+- The GRE implementation does not comply with 3GPP requirements (4 bytes instead of 8 bytes with RQI)
+- The NAS messages should be prefixed with 2 bytes with NAS lengh information, but in free5GC NAS messages are carried dirfectly in the TCP connection
+- AN parameter "requested NSSAI" is not correctly formated
+- EAP-AKA' authentication not complete (in AMF), and several erronous checks (in AUSF when comparing RES with XRES, wrong padding in RES processing, KSEAF calculated based on empty KAUSF key)
+
+
+------------
 
 Example with EAP-AKA' Authentication (I needed to change several files in free5GC to make it work...):
 
