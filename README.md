@@ -161,12 +161,13 @@ Nevertheless, I implemented the app to comply with R16 standards, althoug I neve
 Some free5GC issues:
 -------------------
 
-- Does not send the PDU Session Establishment Accept to the UE through signaling SA child. Only creates the userplane SA child
+- Does not send the PDU Session Establishment Accept to the UE through signaling SA child. Only creates the userplane SA child. That means that we must figure out what will be the session IP. Usingo free5gc defaults, that address is 60.60.0.1. But i added option -u so that we can set the session IP in order to create the tunnel for user plane sesion correctly.
 - The GRE implementation does not comply with 3GPP requirements (4 bytes instead of 8 bytes with RQI)
-- The NAS messages should be prefixed with 2 bytes with NAS lengh information, but in free5GC NAS messages are carried dirfectly in the TCP connection
+- The NAS messages should be prefixed with 2 bytes with NAS lengh information, but in free5GC NAS messages are carried directly in the TCP connection
 - AN parameter "requested NSSAI" is not correctly formated
 - EAP-AKA' authentication not complete (in AMF), and several erronous checks (in AUSF when comparing RES with XRES, wrong padding in RES processing, KSEAF calculated based on empty KAUSF key)
-
+- EAP-AKA' packets do not have the subtype byte (e.g. AKA-Challenge, etc...) and the following 2 reserved bytes (3 bytes in total)
+- Integrity and Ciphering functions in AMF are using Bearer ID for 3GPP access, instead of non-3GPP access as stated in 33.501
 
 ------------
 
