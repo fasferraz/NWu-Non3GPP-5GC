@@ -19,7 +19,7 @@ The applications outputs every single KEY and parameter used in the IKEv2 and IP
 
 
 This applications supports currently the following RFCs and options:
-- IKEv2 RFC 5996
+- IKEv2 RFC 5996 / RFC 7296
 - EAP-AKA Authentication RFC 4187
 - EAP-AKA' Authentication RFC 5448
 - IKEv2 Encryption: AES-CBC-128 and AES-CBC-256 and NULL
@@ -474,4 +474,25 @@ root@ubuntu:/home/fabricio#
 
 
 
+```
+
+
+Example of routing table after session establishment:
+
+-> N3IWF NAS IP address: 10.0.0.1
+-> UE source IP address to communicate with NAS: 10.0.0.218 (IP address of tun2 - Signaling SA CHILD)
+
+-> Session IP address: 60.60.0.8 (IP address of tun3 - Userplane SA Child, Default Route)
+
+```
+root@ubuntu:/etc# route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         60.60.0.8       128.0.0.0       UG    0      0        0 tun3               <- Userplane SA Child
+0.0.0.0         172.16.62.2     0.0.0.0         UG    20100  0        0 ens33
+10.0.0.1        10.0.0.218      255.255.255.255 UGH   0      0        0 tun2               <- Signalling SA Child
+128.0.0.0       60.60.0.8       128.0.0.0       UG    0      0        0 tun3               <- Userplane SA Child
+169.254.0.0     0.0.0.0         255.255.0.0     U     1000   0        0 ens33
+172.16.62.0     0.0.0.0         255.255.255.0   U     100    0        0 ens33
+root@ubuntu:/etc# 
 ```
