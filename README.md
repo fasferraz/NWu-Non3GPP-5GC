@@ -115,7 +115,7 @@ from CryptoMobile.Milenage import Milenage
 from gNAS import *
 from gSECURITY import *
 ```
-Note: I added the card.USIM module because it handles much better blank USIM cards bought in eBay or AliExprees, than my old USIM interaction functions.
+Note: I added the card.USIM module (https://github.com/mitshell/card) because it handles much better blank USIM cards bought in eBay or AliExprees, than my old USIM interaction functions.
 
 
 These are the options currently available when starting the app:
