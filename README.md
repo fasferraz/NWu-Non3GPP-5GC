@@ -158,6 +158,10 @@ This was needed, since this was the only open 5G Core I know with N3IWF implemen
 
 Nevertheless, I implemented the app to comply with R16 standards, althoug I never test it against a N3IWF fully compliant.
 
+
+Please check the Wiki (https://github.com/fasferraz/NWu-Non3GPP-5GC/wiki/Setup-Example) to see a setup example with free5GC.
+
+
 Some free5GC issues:
 -------------------
 
