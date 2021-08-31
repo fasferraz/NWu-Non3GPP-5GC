@@ -500,3 +500,187 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 172.16.62.0     0.0.0.0         255.255.255.0   U     100    0        0 ens33
 root@ubuntu:/etc# 
 ```
+
+
+# Updated Version:
+
+- Support for Netowrk Namespaces for User Plane Traffic (option -n) for SWU or NWU mode;
+- TCP Process moved to a specific signalling network namespace to avoid possible IP overlapping between NAS_IP_ADDRESS or INTERNAL_IP4_ADDRESS and any local interface;
+- Synch Failure in EAP-AKA' authentication (was already supported for 5G-AKA);
+
+Example of 5G-AKA with namespace option:
+
+```
+root@ubuntu:/home/fabricio# python3 nwu_emulator.py  -a internet -d 172.16.62.131 -M 208 -N 93 -m 0 -F -s 172.16.62.130 -g 172.16.62.131 -n baba
+208930000000003
+INTERFACE_TYPE 1
+
+STATE 1:
+-------
+NAT SOURCE 46931f1f97cedc0e37e845354cfe391e59327436
+NAT DESTINATION 560dfed5de6f96d1007774e9547af0e4ecd8d307
+sending IKE_SA_INIT
+
+Received IKE message decoded:
+[[41, [0, 17, b'', b'\x00\x0e']]]
+received IKE_SA_INIT
+REPEAT_STATE : INVALID_KE_PAYLOAD
+
+STATE 1 (retry 1):
+------- -------
+NAT SOURCE 46931f1f97cedc0e37e845354cfe391e59327436
+NAT DESTINATION 560dfed5de6f96d1007774e9547af0e4ecd8d307
+sending IKE_SA_INIT
+
+Received IKE message decoded:
+[[33, [1, 1, b'', b'\x00\x00\x00,\x01\x01\x00\x04\x03\x00\x00\x0c\x01\x00\x00\x0c\x80\x0e\x00\x80\x03\x00\x00\x08\x02\x00\x00\x02\x03\x00\x00\x08\x03\x00\x00\x02\x00\x00\x00\x08\x04\x00\x00\x0e']], [34, [14, b'\x9b#\xaal\xf4\x81\xb36T\xf9\xbd\xfe\xa2\xec\xd4\xf3\x1a8A\xe9@\x1e\x1e\xb7\xc9EM\xac\x80wHi#\xd1\xb0cs1m\xb7\x04\x02\xa1\x82\xfcIWb\xc8Rbu\xcfE%\x8a\x95\x06\x9a\x94\xf0\xb8-n\xb7\xa2\x94^8\x0fs\xf8dF\xa6y\xd5\xba\xfa\xf3I\x96\x17\xdb0\xcczN-\xd1\r\xff\xdcNa\x1c\xb2\xd9\xc5-\xc0i\xfe5\x0c\x95\xd2\x8a\nj\xc2\x0ct\x8c\xef\x14M\x98O\xe8\x90\xd2`:\x8c\x10DK\xb6S\xd5\x8e \xfe\xebd\xbc\xdc]\xefP\xda\xf3\xb6?x\x96\xe7\xad\xaa\x0e\x12\x95\x84\xb8\xd5\x18\xd5\xc4\xfc\xb5j\xe9\x86\xec\xe5\xa2\xb4D\xcd\x8f\xf2B\xfc\x87\x86\x97\xfatc\x0e<\x8d\x17\x84\xe3\x07wv?\xef\x7f\x99\xf9;\x8f\xafP\xfb\xe5x #\x9b\xfb%2\xca\xe5\xb9\x17\x90\x99\nm\x00\x8a\xb0\x9fT\xa7u\x035\x8b6\x83=\xdd\xa9\x84x0\xa5`\xb0?9\xd3\x0c\xa0&\xfb1\x10PCK\x80-1\xdd\x02\xcd\x93\x8b']], [40, [b'\x97\xbe\xf7\x1d\x94\xaa:\xdeT\x14\xba,\x12\xeb\x87\r\xed\xb2\xeb\xd4b\x98M\xe6\xe5~z\x9b\xdb\x8d\xaa\xd0x\x08\xc2\x0f\x05\xef\x9c\x9c\xb2\xa2\xd7~\xec^\xb3\xef\x18cr\xb9\xfc\xc6J=gs\xff\xe7\t\xcb\x899\xd8w\x0et\xd4\xccR^\xff\xb0`\xcb\x9b\xe8\xe5\xd5{u\x0b\xe0\xa0$\xbe\xa5\xdb-7>\x9e\xc9\x81,D\x0c\xd6p\xfa0\xce~"-\x94\x8c\xf4L\xdaA\x82\x11\x88hv\xd3\xa8\xb6\xc9\xae\x91H^\xd5\x1e;\x88\x8f\xb4\x9eN>\xe9\xa7V:{\xcd\x9d\xa5\x1e\xd2`\xd9\xfb%7\xd1\x06\xa4z\x8b\xb6aa\x9d2/]T]\xe7\xa5\xd3c%\x81~\xdap9\x8d{\xa9\xb6`\xea1)\xfd\xfa\x1cB\x9a\xceY@G\xb3\rp{\xc3x\xbd\x9b\xb3\xe7\x83\xe1\'\xc3\xf3$\xf6\t&\x17\xfd\xef\\\x80\xf749>_\xeah\x9e\xdc\x90,Z\x08\xd1#7&\x95\xea\x01C\xb8R\xa8{\xd0\xf7h\xef\x98[\xaacx7\xc2\xf3\x81~\xb8\xaa\xad']], [41, [0, 16388, b'', b'i\xb5A\xb6\x8e\x0e\xa5#\x8e\x05:\x12\xb4"\xeb\xa8\xac\x10>\x83\x01\xf4']], [41, [0, 16389, b'', b'i\xb5A\xb6\x8e\x0e\xa5#\x8e\x05:\x12\xb4"\xeb\xa8\xac\x10>\x82\x01\xf4']]]
+received IKE_SA_INIT
+DIFFIE-HELLMAN KEY 4ae0c3316f08139247a486139855d679b7df62e34493afe1d5d125f470d027d36ce70ba8d27c79cbc8f58da81b868355feef514d8b8825bcbb50c1c4b17753257b8a874be3ea7c8c15bc669cd297fd5a0c5920f8ddb83041522c69b992e598a1696c9e77c3cc845ed461e07dd371ebb57309cd9df8b9f5669a640eb316fb9ad1451a08bcab58bbd3cc9ae62610c10553f8f762618593fceebb0e990a925c7e50419f7ac1ff52e31fb0fe10f526c5cc519cea63e4c8ded02e6fe360350ada927e5175600c80d7564147f54d9f8aae9fa66e6a81e6c8fc7b490a6ec90d896747ccc9d5011199b4a69e455b268b5986b3114a027e882466c3685cd26cf0d27ea8fa
+NAT SOURCE RECEIVED 69b541b68e0ea5238e053a12b422eba8ac103e8301f4
+NAT SOURCE CALCULATED 1f84559feff40bd6475e6a7e22b9dcccebdf00f9
+NAT DESTINATION RECEIVED 69b541b68e0ea5238e053a12b422eba8ac103e8201f4
+NAT DESTINATION CALCULATED ddba1b86ba37b2943ace54719ca56299950d2ea2
+SKEYSEED fd4c85ec14014047f47207d1a6790eef2f33d307
+STREAM 1518527e5174dc1f2c68b1de346b25d597bef71d94aa3ade5414ba2c12eb870dedb2ebd462984de6e57e7a9bdb8daad07808c20f05ef9c9cb2a2d77eec5eb3ef186372b9fcc64a3d6773ffe709cb8939d8770e74d4cc525effb060cb9be8e5d57b750be0a024bea5db2d373e9ec9812c440cd670fa30ce7e222d948cf44cda418211886876d3a8b6c9ae91485ed51e3b888fb49e4e3ee9a7563a7bcd9da51ed260d9fb2537d106a47a8bb661619d322f5d545de7a5d36325817eda70398d7ba9b660ea3129fdfa1c429ace594047b30d707bc378bd9bb3e783e127c3f324f6092617fdef5c80f734393e5fea689edc902c5a08d123372695ea0143b852a87bd0f768ef985baa637837c2f3817eb8aaad69b541b68e0ea5238e053a12b422eba8
+SK_D 579ecb351d3dffa7f954ce1ae2d925f852101309
+SK_AI d1a573ffdc9b6dfef0b1f93682fd271fc10cc0d7
+SK_AR a8be721548dc83c7248e2732f986228c7d711ced
+SK_EI be6f513b22dfc08f1ec08771f65b245c
+SK_ER a6a8ac9ed8c6704f52a3ad1b7e4e5dea
+SK_PI e25acef0fc925dd1c7d4a2bbf2f67f0625e1bb30
+SK_PR 8f18458133afa71fcd12989bbaf419c95d8d71fd
+IKE SPI INITIATOR 69b541b68e0ea523
+IKE SPI RESPONDER 8e053a12b422eba8
+
+STATE 2:
+-------
+sending IKE_AUTH (1)
+EAP 0113000efe0028af000000030100
+
+Received IKE message decoded:
+[[46, [[36, [2, b'n3iwf.free5gc.org']], [37, [4, b'0\x82\x03\xf90\x82\x02\xe1\xa0\x03\x02\x01\x02\x02\x14\x0b\xabB\xd3f\xbd\xbb\xc3\xd4\x80\xeb\xb5\xb1"\xf5\x11\xf4\xba\xe4\x050\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x000\x81\x9c1\x0b0\t\x06\x03U\x04\x06\x13\x02TW1\x0f0\r\x06\x03U\x04\x08\x0c\x06Taiwan1\x0f0\r\x06\x03U\x04\x07\x0c\x06Taipei1\x100\x0e\x06\x03U\x04\n\x0c\x07WireLab1\x110\x0f\x06\x03U\x04\x0b\x0c\x08Wireless1*0(\x06\t*\x86H\x86\xf7\r\x01\t\x01\x16\x1bwirelab@wire.cs.nctu.edu.tw1\x1a0\x18\x06\x03U\x04\x03\x0c\x11n3iwf.free5gc.org0\x1e\x17\r200329114305Z\x17\r300327114305Z0\x81\x9c1\x0b0\t\x06\x03U\x04\x06\x13\x02TW1\x0f0\r\x06\x03U\x04\x08\x0c\x06Taiwan1\x0f0\r\x06\x03U\x04\x07\x0c\x06Taipei1\x100\x0e\x06\x03U\x04\n\x0c\x07WireLab1\x110\x0f\x06\x03U\x04\x0b\x0c\x08Wireless1*0(\x06\t*\x86H\x86\xf7\r\x01\t\x01\x16\x1bwirelab@wire.cs.nctu.edu.tw1\x1a0\x18\x06\x03U\x04\x03\x0c\x11n3iwf.free5gc.org0\x82\x01"0\r\x06\t*\x86H\x86\xf7\r\x01\x01\x01\x05\x00\x03\x82\x01\x0f\x000\x82\x01\n\x02\x82\x01\x01\x00\xc3\x90\x81\x13\xdf[\x97o<\xf7\xf2\xde\xb9\x0b\x92\xc7o\xdc%\x17\xc2UY\xd8\xdb\xfd\x84\x13\xdc]k\x9a\xfe\x16xs\x03\x1d\xad\xde\xc8\x8f\x8a\xef2c\x9cA"a\x0b\xa6\xbe\xfaOF\xf7o\xca\t\xd9\x82\xdf1 `Er\x9fq\x85|\xfa\xf5\xfd1\x8f\xa1t\xd3\xf8\x00\x8an\xb2\xbd\x8a\xf9\x92\xa5Hot\x8fM\xe6A\xd4\x18\x08\xd7/\xc5m\x80V;\xd6N)\xccU\x8c*\xee#\x97\xf4\'\xc5\xd5\'\x01a\x02\xa2\x0f\x1d8\xc7\x88\xf7\xd7.^\xa99\xeb#A\xd5\x94"\x00\x99\x00\xca}8\xf27+\x91pT&\xbf\xd2\xbd\xd4\xb2\'\xef\x12\xad\xfc25\x8cF\x83p`\x96Y\x1f\\i\x0b\x1a\xa1\xafX\xdb2\xc6c\x04\r\x82A\xf6\x8f\x7f\r\x86\xb2C\x17\x1a\x8c\xdf1\xaczV\x14\x1c\xcc\x15RX\x9c\xbd\xee\x8e\x8c\xc3\xda\x1a/W$4v\x9c\\\xfbN4=\x85+\xac\x18:\xd5\x0c\xb5|\xc0\x1b\xa6HN\xd2\x1e\xf0\xad\x80f&\xb8\x88\x04\t\x02\x03\x01\x00\x01\xa310/0\x1c\x06\x03U\x1d\x11\x04\x150\x13\x82\x11n3iwf.free5gc.org0\x0f\x06\x03U\x1d\x13\x04\x080\x06\x01\x01\xff\x02\x01\x000\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x00\x03\x82\x01\x01\x00Q\xa2\xdd\x04\r\x02\xcdK\xb2W\xcd\xb6\x8e\x83d\x01M\xcd\x14\xda2|\x15\x94#\xf8\xfb\xa1f\xf4Z\xcb\x02`\x0b\x06jqf2\xaa\x90#<\xa8\xa8\xa8\xd3\xea\x08\xefb\x04\x87\xa9]5[\x8e\xaag\xdb\xbf\xf6\xa7\x9e\xa8T\xb7\xc2\xf0\x1a^\xbdj\xed\x16\xfc\xcc\xa9\xdaFa\xf3u\xd4\xa3\xe0\xc9\xba\xc1\xf6\xf5\xf8\xcf%\x8e\x13\x11\x0b-\xc4k\xc2\x1d\x1bql\xb0\xff\x95\xe8\x01\xd6j$\x89G\x0bIY&\x11\x8aJC.\xba\xdc\x06\x8a\xcdt\x18\xbf1\xad~\xb0\xa6\x1c\\\xd4.\x83\xd3\xb9\xd9\xd0p\x1fs@\xacD\xc4\x13\xe9\x95x\x8e\x83yO\xbc\xd7fO"\x177\xecb\x12\x92\x9b=\xe8A\xaf/R\xfd}\x85\xf3\xc7\x9b\xb4\x89\x0c\xa9X\xca=\x15C1\xa7\x8e\xb9\xf0m\xca\n\x93h\x1d\x90\x9f)\xde\xa3Z\xd7+\xb2n\xc7\xcf\xae\xf7\xd2.Y\x80\x8b\x95\x80\x83?\x05\x85\x12\xe6\xb7\x90q`=\x1b\x95\x81y\xe7au\xbbv\xad\xaf\xa23JqV']], [39, [1, b'\xa5#m\xdb\xbf\xec0\xcf~\xd4\x03\xd0\xd8\xd7\x87\xd4\xdb\x04%\x95\xe4\xe0\x03\'\xa3\xa0\xe2.]\x03w\xab\x94\xb0\xeak\xa7\rGb\xed\xe7\x95\x14dDxgh9N\x1a,\x1c\xb2\x1b!\xd0 k\xfb\x02\xf0,\x81\xf7\xda\xfa\x80\x19\x08\xaa\xdd\x1dEK4\xc7\xf2\xde\x1d\xb2Q\xda\xc8\xcf\x8a\xb0}+\xfb\x7f}\x91[}\xe2\xc0\x98!\x8f"\xf9\x06\xe5\x98:\xb2\x80\xc7\x9c!Sf\\uE\xde\x8e\x9f0\x05\xfe\x91#B\x05\x1d\x90\x00F|\xccMo\x84\xeb\xf7B\x8f:I#\x84\x90W\xd6\xfc\x85c\x97\xa3\x9a\x0e\x83\x7f\xbby \x9c~\xd9\xe0\xde\x0ePC\x98\x05z\xe3\x92\xe5\xc4\x02\x89\xdb\xac\xd8\xff\x04\'f\xb4\x14\x7f:\xf4x\xbf\x9fK\tY\xe6\xec2(g\r\xa2\xcf[\x86\x89"+\xcd\x02\xc5<DE^u\tf\xb5\xe3\x06\xd6\xa1R*f$|m\xed\xbc\x95\xe1\x9dl2\x86\r\xf9`\x05\xd7\xec_\xff\xf9\xc0(9\xf9*A\xbe5\xcf\xaa\xce']], [48, [1, 19, 254, b'\xfe\x00(\xaf\x00\x00\x00\x03', [10415, 3, 1]]]]]]
+received IKE_AUTH (1)
+
+STATE 3:
+-------
+sending IKE_SA_AUTH (2)
+EAP 0127003afe0028af000000030200002a7e005600020000213426efcf8f7907156818e405c032278320107b462d3dc8fa80009893224f14978614
+
+Received IKE message decoded:
+[[46, [[48, [1, 39, 254, b'\xfe\x00(\xaf\x00\x00\x00\x03', [10415, 3, 2, None, b'~\x00V\x00\x02\x00\x00!4&\xef\xcf\x8fy\x07\x15h\x18\xe4\x05\xc02\'\x83 \x10{F-=\xc8\xfa\x80\x00\x98\x93"O\x14\x97\x86\x14']]]]]]
+received IKE_AUTH (2)
+NAS_DECODED [(1, 126), (2, 0), (3, 86), (111, 0), (112, b'\x00\x00'), (113, b"4&\xef\xcf\x8fy\x07\x15h\x18\xe4\x05\xc02'\x83"), (114, b'{F-=\xc8\xfa\x80\x00\x98\x93"O\x14\x97\x86\x14')]
+ABBA 0000
+RAND 3426efcf8f7907156818e405c0322783
+AUTN 7b462d3dc8fa80009893224f14978614
+[DBG] (authenticate) successful 3G authentication. Get [RES, CK, IK(, Kc)]
+RES 3A2C23205ED5E3C1
+CK AA92FE0B3F3EEA36066FE121319BB582
+IK 1B47BEC069379475C7F6899BD32A2D0C
+b'5G:mnc093.mcc208.3gppnetwork.org'
+RES* f6b326c1273dac59b0468f5a6fb8d3cd
+HRES* 07937c7e60d4e822114a61cde18c00af
+KAUSF 8fac725ba8539b53322f1f662651e383cf47c069b883c7cb83d630de66578272
+KSEAF bb11e8f8e60108a2b379a79ffb1b89d6b046666b64c9da044085f4367c765f05
+KAMF 5125729d449fe1f003c8a025f544c8df41c5f07a814fc3f1ac7672692fc84eea
+EEA1-KEY 8a4767f3c8a6d7e50e17407b0ae6344d
+EEA2-KEY 67b112b4cef22b118d84e16fcc716ee1
+EEA3-KEY 15fc76fe6f713afad5f3b30057cf1615
+EIA1-KEY 5eec5345bc185c7c5fe140da635aa7f0
+EIA2-KEY 0c4a9876f03173f613523a120300d2e0
+EIA3-KEY 122c8f94bfa24789ce5d4112b008c4dd
+EAP RESPONSE 02270027fe0028af000000030200000000157e00572d10f6b326c1273dac59b0468f5a6fb8d3cd
+
+STATE 4:
+-------
+sending IKE_SA_AUTH (3)
+EAP 01bd0023fe0028af00000003020000137e0311af7c45007e005d0200028020e1360100
+
+Received IKE message decoded:
+[[46, [[48, [1, 189, 254, b'\xfe\x00(\xaf\x00\x00\x00\x03', [10415, 3, 2, None, b'~\x03\x11\xaf|E\x00~\x00]\x02\x00\x02\x80 \xe16\x01\x00']]]]]]
+received IKE_AUTH (3)
+NAS DECODED [(1, 126), (2, 3), (4, b'\x11\xaf|E'), (5, 0), (6, b'~\x00]\x02\x00\x02\x80 \xe16\x01\x00')]
+NAS DECODED [(1, 126), (2, 0), (3, 93), (120, 2), (111, 0), (121, b'\x80 '), (117, 1), (118, b'\x00')]
+MAC Received 11af7c45
+MAC Calculated 11af7c45
+KN3IWF ec947219c287f03488584b833462d6b481e5fe9cdc4ba9bb54ecdbcd5f862d03
+02bd0028fe0028af000000030200000000167e0484692958007e005e7700095534129078563412f0
+
+STATE 5:
+-------
+sending IKE_SA_AUTH (4)
+EAP 03c80004
+
+Received IKE message decoded:
+[[46, [[48, [3, 200]]]]]
+received IKE_AUTH (4)
+
+STATE 6:
+-------
+sending IKE_SA_AUTH (5)
+
+Received IKE message decoded:
+[[46, [[39, [2, b'\x95\x10\xbd\xdc\xcb\x07\xa0C\x01\xef\x8eq\x9c\xcb\xecu\x0e\xbd\x83\x91']], [47, [2, [(1, '0.0.0.0', '0.0.0.0', '0.0.255.255', '10.0.0.16'), (2, '255.255.255.0')]]], [33, [1, 3, b'\x80\xa0\xe1\xab', b'\x00\x00\x00 \x01\x03\x04\x02\x80\xa0\xe1\xab\x03\x00\x00\x0c\x01\x00\x00\x0c\x80\x0e\x01\x00\x00\x00\x00\x08\x05\x00\x00\x00']], [44, [1, [(7, 0, 0, 65535, '10.0.0.16', '10.0.0.16')]]], [45, [1, [(7, 0, 0, 65535, '10.0.0.1', '10.0.0.1')]]], [41, [0, 55502, b'', b'\n\x00\x00\x01']], [41, [0, 55506, b'', b'N ']]]]]
+received IKE_AUTH (5)
+IPV4 ADDRESS ['0.0.0.0', '0.0.0.0', '0.0.255.255', '10.0.0.16']
+TUNNEL IP FOR TCP 10.0.0.16
+IPSEC RESP SPI 80a0e1ab
+IPSEC INIT SPI 80a0e1ab
+IPSEC PROPOSAL 1
+NAS IP ADDRESS 10.0.0.1
+NAS TCP PORT 20000
+SK_IPSEC_AI 
+SK_IPSEC_AR 
+SK_IPSEC_EI e2f0020e61dd47fb2e07f784dd3dcede5e560ec47e04e4b3a201ac3857ad8e7d
+SK_IPSEC_ER 5f0bf7318a25d6e29d5fff03b2eae11737f29d7d5fa63c927000fc76d741a24b
+
+Signaling SA CHILD created. Establishing TCP session towards NAS...
+
+cmd: ip netns exec tcp_socket_signalling ip link set dev tun2 up
+cmd: ip netns exec tcp_socket_signalling ip addr add 10.0.0.16/32 dev tun2
+cmd: ip netns exec tcp_socket_signalling route add -net 0.0.0.0/0 gw 10.0.0.16
+
+STATE 7:
+-------
+NAS DECODED [(1, 126), (2, 2), (4, b'\xea!\xf6\xc6'), (5, 1), (6, b'~\x00B\x01\x02w\x00\x0b\xf2\x02\xf89\xca\xfe\x00\x00\x00\x00\nT\x07\x00\x02\xf89\x00\x00\x01\x15\n\x04\x01\x01\x02\x03\x04\x01\x11"3]\x01I\x16\x01,')]
+NAS DECODED [(1, 126), (2, 0), (3, 66), (100, b'\x02'), (101, b'\xf2\x02\xf89\xca\xfe\x00\x00\x00\x00\n'), (103, b'\x00\x02\xf89\x00\x00\x01'), (104, b'\x04\x01\x01\x02\x03\x04\x01\x11"3'), (109, b'I'), (110, b',')]
+REGISTRATION ACCEPT message received
+5G-GUTI [(40000, 2), (40001, 20893), (40002, 202), (40003, 1016), (40004, 0), (40005, b'\x00\x00\x00\n')]
+Preparing REGISTRATION COMPLETE to send...
+Preparing UL NAS TRANSPORT message with container PDU SESSION ESTABLISHMENT REQUEST to send...
+
+STATE 7:
+-------
+NAS DECODED [(1, 126), (2, 2), (4, b'\x92\x89\xa4f'), (5, 2), (6, b'~\x00h\x01\x00:.\x05\x00\xc2\x11\x00\t\x01\x00\x0611\x01\x01\xff\t\x06\x06\x00d\x06\x00\xc8Y2)\x05\x01<<\x00\x04"\x04\x01\x01\x02\x03y\x00\x06\t A\x01\x01\t%\t\x08internet\x12\x05')]
+NAS DECODED [(1, 126), (2, 0), (3, 104), (172, 1), (173, b'.\x05\x00\xc2\x11\x00\t\x01\x00\x0611\x01\x01\xff\t\x06\x06\x00d\x06\x00\xc8Y2)\x05\x01<<\x00\x04"\x04\x01\x01\x02\x03y\x00\x06\t A\x01\x01\t%\t\x08internet'), (7, 5)]
+DL NAS TRANSPORT message received
+NAS PAYLOAD DECODED [(1, 46), (7, 5), (8, 0), (3, 194), (150, 1), (151, 1), (152, b'\x01\x00\x0611\x01\x01\xff\t'), (153, b'\x06\x00d\x06\x00\xc8'), (154, 50), (155, b'\x01<<\x00\x04'), (157, b'\x01\x01\x02\x03'), (160, b'\t A\x01\x01\t'), (149, b'\x08internet')]
+  -> PAYLOAD CONTAINER: PDU SESSION ESTABLISHMENT ACCEPT message received
+USERPLANE SESSION IPV4 ADDRESS 60.60.0.4
+cmd: ip netns exec baba ip link set dev tun3 up
+cmd: ip netns exec baba ip addr add 60.60.0.4/32 dev tun3
+cmd: ip netns exec baba route add -net 0.0.0.0/1 gw 60.60.0.4
+cmd: ip netns exec baba route add -net 128.0.0.0/1 gw 60.60.0.4
+
+Received IKE message decoded:
+[[46, [[33, [1, 3, b'\x98\x11\xee\x8b', b'\x00\x00\x00 \x01\x03\x04\x02\x98\x11\xee\x8b\x03\x00\x00\x0c\x01\x00\x00\x0c\x80\x0e\x01\x00\x00\x00\x00\x08\x05\x00\x00\x00']], [40, [b'\xf1\x1a\x00jk\x99\x17N)(\xac\x17\xc2\x93\xf3\x1d \xa0\x82\xe9\xe7\xb7Q\xbd\xe1\xbd\x10\xe7\t\x99\xc0\x8a\xd6\t\xedL0vt\xda\xae\x9dE\x04\xa1\xc7\xc7~\x07\xfby\xdf\nr\xcf\xe4\xa8Z\xa9\xdfYX\x96\x97\x1a\x0c;\x87 \xe7\xa8\xe6\x9e\xe1\xc2\xd3\xd4\x11l\xad\x10\x0f\xf0\xfc\xe0=af[\xade\xbdr\xee(\xbf\xcf\xaej\xd4\xad\xb4\x16\x19A\x93\x1b\x99\xf8\x84\x93aI\xa0/\xb0\x1bs\x85\x9f\xa5\xca\x91R\x1e\xd2x\xecrPF\xa3$\xceNZ\x0cL\x1aDW\x88H\x0b:\x7fo\xeeX0\x8d\xc5\x11\x12#\x91[sPv\xb0\xccdulb\xcd\xd69\xe8t3hM\xd5t\x95%\x96%\xf7\xc9H\xc1<\x16\x1f\n+\xe6\xfbw\x7f\xec\x8bzI^,{\x0f\xd7\xc6\xe5T5.\x8c\xe1\x9fFq\x81\xbfh\xd8-s\xa1\xd6\xb7\xb0\xdc]\x13\n<b\xb0\x9a"Uu,\x05k\xb7n\xd9fO\xa9\x8a\x13\x894v{\xf7G\x90\xb7\xda\xc8A\x11']], [44, [1, [(7, 0, 0, 65535, '10.0.0.1', '10.0.0.1')]]], [45, [1, [(7, 0, 0, 65535, '10.0.0.16', '10.0.0.16')]]], [41, [0, 55501, b'', b'\x05\x05\x01\t\x02']], [41, [0, 55504, b'', b'\n\x00\x00\x01']]]]]
+
+STATE N3IWF SENT A CREATE CHILD SA:
+----------------------------------
+5G QOS INFO 0505010902
+UP IPV4 ADDRESS 10.0.0.1
+received CREATE_CHILD_SA request IPSEC
+USERPLANE CHILD SPI INITIATOR  9811ee8b
+USERPLANE CHILD SPI RESPONDER 9811ee8b
+SK_IPSEC_AI 
+SK_IPSEC_AR 
+SK_IPSEC_EI 60891ed9f01ac86ac0d1a4761215fae69fc52d017317ac07c4ae2b2d78f633ed
+SK_IPSEC_ER db4863f8f702db9575685548b7468a190e898c1fd77d573032fc6d0bc6939996
+sending CREATE_CHILD_SA response IPSEC
+q
+Preparing UL NAS TRANSPORT message with container PDU SESSION RELEASE REQUEST to send...
+Exiting TCP process. Process terminated.
+sending INFORMATIONAL (delete IKE)
+root@ubuntu:/home/fabricio# 
+
+```
