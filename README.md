@@ -504,7 +504,7 @@ root@ubuntu:/etc#
 
 # Updated Version:
 
-- Support for Netowrk Namespaces for User Plane Traffic (option -n) for SWU or NWU mode;
+- Support for Network Namespaces for User Plane Traffic (option -n) for SWU or NWU mode;
 - TCP Process moved to a specific signalling network namespace to avoid possible IP overlapping between NAS_IP_ADDRESS or INTERNAL_IP4_ADDRESS and any local interface;
 - Synch Failure in EAP-AKA' authentication (was already supported for 5G-AKA);
 
