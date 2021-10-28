@@ -173,6 +173,11 @@ Some free5GC issues:
 - EAP-AKA' packets do not have the subtype byte (e.g. AKA-Challenge, etc...) and the following 2 reserved bytes (3 bytes in total)
 - Integrity and Ciphering functions in AMF are using Bearer ID for 3GPP access, instead of non-3GPP access as stated in 33.501
 
+Update 2021/10/28:
+-----------------
+
+In free5gc version 3.0.6 some of these issues were solved. The current version of my app was updated to work with this new free5gc release.
+
 ------------
 
 Example with EAP-AKA' Authentication (I needed to change several files in free5GC to make it work...):
@@ -684,3 +689,6 @@ sending INFORMATIONAL (delete IKE)
 root@ubuntu:/home/fabricio# 
 
 ```
+
+# Update 2:
+- Current version was updated to diplay the ike_decryption_table and esp_sa information to decode traces in wireshark.
