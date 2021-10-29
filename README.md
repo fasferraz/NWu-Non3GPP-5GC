@@ -691,4 +691,6 @@ root@ubuntu:/home/fabricio#
 ```
 
 # Update 2:
-- Current version was updated to diplay the ike_decryption_table and esp_sa information to decode traces in wireshark.
+- Current version was updated to display the ike_decryption_table and esp_sa information to allow decoding IKE/IPSec in wireshark.
+
+by Fabricio - 2021
