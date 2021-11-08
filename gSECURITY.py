@@ -1,6 +1,6 @@
 from Crypto.Hash import HMAC
 from Crypto.Hash import SHA256
-from CryptoMobile.CM import *
+#from CryptoMobile.CM import *
 from binascii import hexlify, unhexlify
 import struct
 
@@ -12,11 +12,13 @@ DIRECTION_UP =   0
 BEARER_ID_NAS_CONNECTION_IDENTIFIER_3GPP = 0x1
 BEARER_ID_NAS_CONNECTION_IDENTIFIER_NON_3GPP = 0x2
 
+
 def bcd_bytes(chars):  
     bcd_string = ""
     for i in range(len(chars) // 2):
         bcd_string += chars[1+2*i] + chars[2*i]
     return bytes(bytearray.fromhex(bcd_string))
+
 
 def return_plmn(mccmnc):
     mccmnc = str(mccmnc)
@@ -26,6 +28,7 @@ def return_plmn(mccmnc):
         return bcd_bytes(mccmnc[0] + mccmnc[1] + mccmnc[2] + mccmnc[5] + mccmnc[3] + mccmnc[4]) 
     else:
         return b''
+
 
 def return_5g_plmn(mccmnc):
     mcc = mccmnc[0:3]
@@ -46,23 +49,26 @@ def return_kausf(plmn, autn, ck, ik):
     message = unhexlify('6a') + plmn + unhexlify('00') + bytes([len(plmn)]) + unhexlify(sqn_xor_ak + '0006')
     h = HMAC.new(key, msg=message, digestmod=SHA256)
     return h.digest()[-32:]
- 
- #A.4
+
+
+#A.4
 def return_res_star(plmn, rand, res, ck, ik):
     key = unhexlify(ck + ik)
     plmn = return_5g_plmn(plmn) 
-    print(plmn)
+    print(f'plmn: {plmn}')
     message = unhexlify('6b') + plmn + unhexlify('00') + bytes([len(plmn)]) + unhexlify(rand + '0010' + res + '0008')
+    print(message.hex())
     h = HMAC.new(key, msg=message, digestmod=SHA256)
     return h.digest()[-16:]
- 
- #A.5
+
+
+#A.5
 def return_hres_star( rand, xres):
     s = unhexlify(rand) + xres
     h = SHA256.new(s)
     return h.digest()[-16:]
-    
-    
+
+
 #A.6
 def return_kseaf(plmn, kausf):
     key = kausf
@@ -70,6 +76,7 @@ def return_kseaf(plmn, kausf):
     message = unhexlify('6c') + plmn + unhexlify('00') + bytes([len(plmn)]) 
     h = HMAC.new(key, msg=message, digestmod=SHA256)
     return h.digest()[-32:]
+
 
 def return_kseaf_eap_aka_prime(access_network_identity, kausf):
     key = kausf
@@ -94,7 +101,6 @@ def algorithm_key_derivation_function(algo_type,algo_identity, kamf):
     return h.digest()[-16:]
 
 
-    
 def return_all_possible_keys(plmn, autn, ck, ik, abba, supi, print_keys = False):
     kausf = return_kausf(plmn, autn, ck, ik)
     kseaf = return_kseaf(plmn, kausf)
@@ -149,10 +155,7 @@ def return_kgnb_kn3iwf(kamf, uplink_count, access_type):
     return h.digest()[-32:]
 
 
-
-
 # Annex B
-
 def nas_hash_func(nas, count, dir, key, algo, bearer_id):
     sqn=bytes([count%256]) #last byte
     if algo == 1:
@@ -163,7 +166,8 @@ def nas_hash_func(nas, count, dir, key, algo, bearer_id):
         return EIA3(key, count, bearer_id, dir, sqn+nas)
     else:
         return b'\x00\x00\x00\x00'
-    
+
+
 def nas_encrypt_func(nas, count, dir, key, algo, bearer_id):
     if algo == 1:
         return EEA1(key, count, bearer_id, dir, nas)
