@@ -2447,6 +2447,7 @@ class nwu_swu():
         print('SK_EI',toHex(self.SK_EI))
         print('SK_ER',toHex(self.SK_ER))
 
+        self.print_ikev2_decryption_table() 
         
     def prf_plus(self,algorithm,key,stream,size):
         hash = self.prf_function.get(algorithm)  
