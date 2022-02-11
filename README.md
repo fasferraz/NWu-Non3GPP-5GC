@@ -693,4 +693,10 @@ root@ubuntu:/home/fabricio#
 # Update 2:
 - Current version was updated to display the ike_decryption_table and esp_sa information to allow decoding IKE/IPSec in wireshark.
 
+# Update 3:
+- To support different IKEv2 ENCR_NULL implementations (an algorithm which by the way, should not be supported according to the IKEv2 RFCs), a new variable was added in the code (self.sk_ENCR_NULL_pad_length):
+   - If the implementation does not expect a PAD LENGTH octet, this variable should be equal to 0. 
+   - If the implementation expects an octet for PAD LENGTH this variable should be equal to 1.
+
+
 by Fabricio - 2021
