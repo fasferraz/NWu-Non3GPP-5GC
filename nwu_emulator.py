@@ -1159,7 +1159,7 @@ class nwu_swu():
             hash_size = self.integ_key_truncated_len_bytes.get(self.negotiated_integrity_algorithm)
             hash_data = data[-hash_size:]
         
-            ike_payload = data[0:len(data)-hash_size]                
+            ike_payload = data[0:len(data)-hash_size-1]                
             (result_ok, decoded_payload) = self.decode_payload(ike_payload, self.current_next_payload,0)
             if result_ok == True:
                 return decoded_payload                
