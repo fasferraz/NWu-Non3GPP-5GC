@@ -3735,6 +3735,7 @@ class nwu_swu():
                                     self.nas_int_alg = nas_selected_algorithms % 16
                                     self.nas_enc_alg = nas_selected_algorithms // 16
                                     additional_5g_security_information, imeisv_request = get_nas_ie_by_name(nas_decoded,IE_ADDITIONAL_5G_SECURITY_INFORMATION), get_nas_ie_by_name(nas_decoded,IE_IMEISV_REQUEST)
+                                    retrans_initial_nas = None
                                     if additional_5g_security_information is not None: retrans_initial_nas = get_nas_ie_by_name(decode_additional_5g_security_information(additional_5g_security_information),IE_ADDITIONAL_5G_SECURITY_INFORMATION__RETRANSMISSION_OF_INITIAL_NAS)
                                     aux_imei = self.imei if imeisv_request is IMEISV_REQUESTED else None
                                     aux_nas = self.initial_nas if retrans_initial_nas is RETRANSMISSION_OF_INITIAL_NAS_REQUESTED else None
