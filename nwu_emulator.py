@@ -83,7 +83,6 @@ INTER_PROCESS_IE_TUNNEL_IP_ADDRESS = 11     #local userplane ip address for GRE 
 ###################################################
 
 
-
 #DEFAULTs
 
 DEFAULT_IKE_PORT = 500
@@ -5046,13 +5045,13 @@ def main():
 
     [
         [ESP,4],
-        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,256]],
+        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,128]],
         [INTEG,AUTH_HMAC_SHA1_96],
         [ESN,ESN_NO_ESN]
     ],
     [
         [ESP,4],
-        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,128]],
+        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,256]],
         [INTEG,AUTH_HMAC_SHA1_96],
         [ESN,ESN_NO_ESN]
     ]
