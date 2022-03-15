@@ -178,6 +178,13 @@ Update 2021/10/28:
 
 In free5gc version 3.0.6 some of these issues were solved. The current version of my app was updated to work with this new free5gc release.
 
+
+Update 2022/03/15:
+-----------------
+
+The current version of my app was updated to work with Free5gc N3IWF Fix issues #7, that solved some previous bugs (ex: IPSec SPIs, Create Child SA, forwarding of pduSessionEstablishmentAccept to the UE, etc...) and some non standard implementation (ex. lack of NAS envelop, etc...).
+This version also corrects some bugs that I had in the code.
+
 ------------
 
 Example with EAP-AKA' Authentication (I needed to change several files in free5GC to make it work...):
