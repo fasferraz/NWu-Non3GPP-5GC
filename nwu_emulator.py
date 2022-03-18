@@ -83,6 +83,7 @@ INTER_PROCESS_IE_TUNNEL_IP_ADDRESS = 11     #local userplane ip address for GRE 
 ###################################################
 
 
+
 #DEFAULTs
 
 DEFAULT_IKE_PORT = 500
@@ -3182,7 +3183,7 @@ class nwu_swu():
                                 return REPEAT_STATE, 'General_Failure'
                      
                     elif i[1][0] in (EAP_FAILURE,):
-                        return OTHER_ERROR,'EAP FAILURE'                     
+                        return OTHER_ERROR,'EAP FAILURE'
                      
                      
                     else:
@@ -3190,12 +3191,12 @@ class nwu_swu():
                         return MANDATORY_INFORMATION_MISSING,'NO RAND/AUTN IN EAP'
 
             if eap_received == True:
-                return OK,''               
+                return OK,''
             else:
                 return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'
 
         else:
-            return DECODING_ERROR,'DECODING_ERROR'        
+            return DECODING_ERROR,'DECODING_ERROR'
 
 
     def state_4_swu(self):
@@ -3209,14 +3210,14 @@ class nwu_swu():
                 if self.userplane_mode == ESP_PROTOCOL:
                     packet, address = self.socket.recvfrom(2000)  
                     self.decode_ike(packet)
-                    if self.ike_decoded_ok == True: break                
+                    if self.ike_decoded_ok == True: break
                 else:
                     packet, address = self.socket_nat.recvfrom(2000)  
                     self.decode_ike(packet[4:])
-                    if self.ike_decoded_ok == True: break                     
+                    if self.ike_decoded_ok == True: break
                 
         except: #timeout
-            return TIMEOUT,'TIMEOUT'            
+            return TIMEOUT,'TIMEOUT'
             
         if self.ike_decoded_header['exchange_type'] == IKE_AUTH and self.decoded_payload[0][0] == SK:
             print('received IKE_AUTH (3)')             
@@ -3242,7 +3243,7 @@ class nwu_swu():
                             return OTHER_ERROR,'NO IP ADDRESS (IPV4 or IPV6)'                       
                     else:
                         #check error
-                        return OTHER_ERROR,'NO CP REPLY'                     
+                        return OTHER_ERROR,'NO CP REPLY'
                         
                 elif i[0] == SA:
                     proposal = i[1][0]
@@ -3256,7 +3257,7 @@ class nwu_swu():
                         return MANDATORY_INFORMATION_MISSING,'MANDATORY_INFORMATION_MISSING'
 
             self.generate_keying_material_child()
-            return OK,''               
+            return OK,''
 
         else:
             return DECODING_ERROR,'DECODING_ERROR'
@@ -3340,7 +3341,7 @@ class nwu_swu():
             self.state_ue_create_sa_child() 
 
     def state_ue_create_sa(self,lowest = 0): #IKEv2 REKEY
-        print('\nSTATE UE STARTED IKE REKEY:\n--------------------------')        
+        print('\nSTATE UE STARTED IKE REKEY:\n--------------------------')
         self.sa_list_negotiated[0][0][1] = 8
         self.sa_list_create_child_sa = self.sa_list_negotiated
                 
@@ -3354,7 +3355,7 @@ class nwu_swu():
         print('sending CREATE_CHILD_SA (IKE)')
 
     def state_ue_create_sa_child(self,lowest = 0): #IPSEC REKEY
-        print('\nSTATE UE STARTED IPSEC REKEY:\n--------------------------')        
+        print('\nSTATE UE STARTED IPSEC REKEY:\n--------------------------')
 
         self.sa_list_create_child_sa_child = self.sa_list_negotiated_child
                 
@@ -3382,8 +3383,8 @@ class nwu_swu():
                     
             elif i[0] == KE:
                 dh_peer_group = i[1][0]
-                dh_peer_public_key_bytes = i[1][1]                            
-                self.dh_calculate_shared_key(dh_peer_public_key_bytes)          
+                dh_peer_public_key_bytes = i[1][1]
+                self.dh_calculate_shared_key(dh_peer_public_key_bytes)
             
             elif i[0] == NINR:
                 self.nounce_received = i[1][0]    
@@ -3411,10 +3412,10 @@ class nwu_swu():
             print('sending INFORMATIONAL (DELETE IKE old)')
 
         if isESP == True:
-            print('received CREATE_CHILD_SA response IPSEC')                
+            print('received CREATE_CHILD_SA response IPSEC')
             self.message_id_request += 1    
             self.spi_init_child_old = self.spi_init_child
-            self.spi_resp_child_old = self.spi_resp_child            
+            self.spi_resp_child_old = self.spi_resp_child
             packet = self.create_INFORMATIONAL_delete(ESP,[self.spi_init_child_old])
 
             self.spi_init_child = self.sa_spi_list[0] #only one proposal was made
@@ -3442,7 +3443,7 @@ class nwu_swu():
                     (INTER_PROCESS_IE_ENCR_KEY, self.SK_IPSEC_ER),
                     (INTER_PROCESS_IE_INTEG_ALG, self.negotiated_integrity_algorithm_child),
                     (INTER_PROCESS_IE_INTEG_KEY, self.SK_IPSEC_AR),
-                    (INTER_PROCESS_IE_SPI_INIT, self.spi_init_child)         
+                    (INTER_PROCESS_IE_SPI_INIT, self.spi_init_child)
                 ]
             ]
                         
@@ -3451,7 +3452,7 @@ class nwu_swu():
             
             #send request
             self.send_data(packet)        
-            print('sending INFORMATIONAL (DELETE IPSEC old)')            
+            print('sending INFORMATIONAL (DELETE IPSEC old)')
 
     def state_connected_swu(self):
         #set udp 4500 socket (self.socket_nat)
@@ -3501,7 +3502,7 @@ class nwu_swu():
             for sock in read_sockets:
      
                 if sock == self.socket:                 
-                    packet, server_address = self.socket.recvfrom(2000)                    
+                    packet, server_address = self.socket.recvfrom(2000)
                     if server_address[0] == self.server_address[0]: #check server IP address. source port could be different than 500 or 4500, if it's a request reponse must be sent to the same port
                                   
                         self.decode_ike(packet)    
@@ -3517,10 +3518,10 @@ class nwu_swu():
                                 self.state_epdg_create_sa_response() 
                   
                         if self.old_ike_message_received == True:
-                            self.old_ike_message_received = False                                
+                            self.old_ike_message_received = False
 
                 elif sock == self.ike_to_ipsec_decoder:
-                    pipe_packet = self.ike_to_ipsec_decoder.recv()                     
+                    pipe_packet = self.ike_to_ipsec_decoder.recv()
                     decode_list = self.decode_inter_process_protocol(pipe_packet)
                     if decode_list[0] == INTER_PROCESS_IKE:
 
@@ -3529,7 +3530,7 @@ class nwu_swu():
                         #if received via pipe it was sent to port udp 4500 (exclude 4 initial bytes)
                         self.decode_ike(packet[4:]) 
 
-                        if self.ike_decoded_ok == True:                           
+                        if self.ike_decoded_ok == True:
                             
                             if self.ike_decoded_header['exchange_type'] == INFORMATIONAL and self.decoded_payload[0][0] == SK and self.ike_decoded_header['flags'][0] == 0:
                                 self.state_delete(False)
@@ -3583,11 +3584,11 @@ class nwu_swu():
                 if self.userplane_mode == ESP_PROTOCOL:
                     packet, address = self.socket.recvfrom(2000)  
                     self.decode_ike(packet)
-                    if self.ike_decoded_ok == True: break                
+                    if self.ike_decoded_ok == True: break
                 else:
                     packet, address = self.socket_nat.recvfrom(2000)  
                     self.decode_ike(packet[4:])
-                    if self.ike_decoded_ok == True: break                     
+                    if self.ike_decoded_ok == True: break
                 
         except: #timeout
             return TIMEOUT,'TIMEOUT'        
@@ -3622,9 +3623,9 @@ class nwu_swu():
             if eap_received == True:
                 return OK,''               
             else:
-                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'              
+                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'
         else:
-            return DECODING_ERROR,'DECODING_ERROR'            
+            return DECODING_ERROR,'DECODING_ERROR'
 
     def state_3_nwu(self):
         self.message_id_request += 1
@@ -3638,33 +3639,33 @@ class nwu_swu():
                 if self.userplane_mode == ESP_PROTOCOL:
                     packet, address = self.socket.recvfrom(2000)  
                     self.decode_ike(packet)
-                    if self.ike_decoded_ok == True: break                
+                    if self.ike_decoded_ok == True: break
                 else:
                     packet, address = self.socket_nat.recvfrom(2000)  
                     self.decode_ike(packet[4:])
-                    if self.ike_decoded_ok == True: break                     
+                    if self.ike_decoded_ok == True: break
                 
         except: #timeout
-            return TIMEOUT,'TIMEOUT'        
+            return TIMEOUT,'TIMEOUT'
 
-        eap_received = False              
+        eap_received = False
         nas_received = False
         if self.ike_decoded_header['exchange_type'] == IKE_AUTH and self.decoded_payload[0][0] == SK:
-            print('received IKE_AUTH (2)')              
+            print('received IKE_AUTH (2)')
             for i in self.decoded_payload[0][1]:
                 
                 if i[0] == EAP:
                     
                     if i[1][0] in (EAP_REQUEST,) and i[1][2] in (EAP_EXPANDED_TYPES,):
                         eap_received = True 
-                        if i[1][4][2] in (EAP_5G_NAS,) and i[1][4][4] is not None:     
+                        if i[1][4][2] in (EAP_5G_NAS,) and i[1][4][4] is not None:
                             self.eap_identifier = i[1][1]    
                             
-                            nas_received = True                            
+                            nas_received = True
                             nas_decoded = nas_decode(i[1][4][4])  # nas_pdu
                             print('NAS_DECODED', nas_decoded)
-                            abba = get_nas_ie_by_name(nas_decoded,IE_ABBA)                            
-                            print('ABBA', toHex(abba))                            
+                            abba = get_nas_ie_by_name(nas_decoded,IE_ABBA)
+                            print('ABBA', toHex(abba))
                             
                             #Authentication EAP-AKA'
                             #----------------------
@@ -3680,28 +3681,28 @@ class nwu_swu():
                                 print('RAND', RAND)
                                 print('AUTN', AUTN)
                                 print('MAC', MAC)
-                                print('KDF', KDF)                                
-                                print('KDF_INPUT', KDF_INPUT)                                
+                                print('KDF', KDF)
+                                print('KDF_INPUT', KDF_INPUT)
                                 if RAND is not None and AUTN is not None:
                                     AUTS = None
                                     RES, CK, IK = return_res_ck_ik(self.com_port,RAND,AUTN,self.ki,self.op,self.opc)
                                     if RES is not None and CK is None and IK is None:
                                         #RES is AUTS
                                         AUTS, RES = RES, None
-                                        print('AUTS', AUTS)                                    
+                                        print('AUTS', AUTS)
                                     else:
                                     
                                         print('RES',RES)
                                         print('CK',CK)
                                         print('IK',IK)
                                 else:
-                                    return MANDATORY_INFORMATION_MISSING,'NO RAND/AUTN RECEIVED'         
+                                    return MANDATORY_INFORMATION_MISSING,'NO RAND/AUTN RECEIVED'
                                         
                                 if RES is not None:
                                     self.KENCR, self.KAUT, self.KRE, self.MSK, self.EMSK, self.MK = self.eap_keys_calculation_prime(KDF_INPUT, AUTN, CK, IK)
                                     print('KENCR',toHex(self.KENCR))
                                     print('KAUT',toHex(self.KAUT))
-                                    print('KRE',toHex(self.KRE))                                        
+                                    print('KRE',toHex(self.KRE))
                                     print('MSK',toHex(self.MSK))
                                     print('EMSK',toHex(self.EMSK))
 
@@ -3723,7 +3724,7 @@ class nwu_swu():
                                     h = hmac.HMAC(self.KAUT,hashes.SHA256())
                                     h.update(nas_eap_payload_response)
                                     hash = h.finalize()[0:16]  
-                                    nas_eap_payload_response = nas_eap_payload_response[:-16] + hash                                        
+                                    nas_eap_payload_response = nas_eap_payload_response[:-16] + hash
                                 
                                 if AUTS is not None:
                                     if self.free5gc == True: #Synch Failure in EAP-AKA' not yet supported in fre5GC
@@ -3787,21 +3788,21 @@ class nwu_swu():
                                 
                                 
                                 self.initial_nas = nas_pdu_response
-                                                                                  
+                                
                                 an_parameters = b'\x00\x00'
                                 nas_pdu = self.encode_eap_nas_pdu(nas_pdu_response)
                                 
                                 payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
                                 self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
                                 
-                                print('EAP RESPONSE', toHex(self.eap_payload_response))                               
+                                print('EAP RESPONSE', toHex(self.eap_payload_response))
                                 
                                 if AUTS is not None:
                                     return SYNCH_FAILURE, 'SYNCH FAILURE'
                                                        
               
             if eap_received == False:
-                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'                                                       
+                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'
             elif nas_received == False:
                 return MANDATORY_INFORMATION_MISSING,'NO NAS PAYLOAD RECEIVED' 
             else:
@@ -3815,34 +3816,34 @@ class nwu_swu():
         self.message_id_request += 1
         packet = self.create_IKE_AUTH_2_NWU()
         self.send_data(packet)
-        print('sending IKE_SA_AUTH (3)')        
+        print('sending IKE_SA_AUTH (3)')
 
         try:
         #if True:
             while True:
                 if self.userplane_mode == ESP_PROTOCOL:
-                    packet, address = self.socket.recvfrom(2000)  
+                    packet, address = self.socket.recvfrom(2000)
                     self.decode_ike(packet)
-                    if self.ike_decoded_ok == True: break                
+                    if self.ike_decoded_ok == True: break
                 else:
                     packet, address = self.socket_nat.recvfrom(2000)  
                     self.decode_ike(packet[4:])
-                    if self.ike_decoded_ok == True: break                     
+                    if self.ike_decoded_ok == True: break
                 
         except: #timeout
             return TIMEOUT,'TIMEOUT' 
 
-        eap_received = False              
+        eap_received = False
         nas_received = False
         if self.ike_decoded_header['exchange_type'] == IKE_AUTH and self.decoded_payload[0][0] == SK:
-            print('received IKE_AUTH (3)')              
+            print('received IKE_AUTH (3)')
             for i in self.decoded_payload[0][1]:
                 
-                if i[0] == EAP:                  
+                if i[0] == EAP:
                     if i[1][0] in (EAP_REQUEST,) and i[1][2] in (EAP_EXPANDED_TYPES,):
                         eap_received = True
-                        if i[1][4][2] in (EAP_5G_NAS,) and i[1][4][4] is not None:                          
-                            nas_received = True                            
+                        if i[1][4][2] in (EAP_5G_NAS,) and i[1][4][4] is not None:
+                            nas_received = True
                             nas_decoded = nas_decode(i[1][4][4])  # nas_pdu
                             print('NAS DECODED', nas_decoded)
 
@@ -3885,10 +3886,10 @@ class nwu_swu():
                                     self.kn3iwf = return_kgnb_kn3iwf(self.kamf, self.COUNT_UP, BEARER_ID_NAS_CONNECTION_IDENTIFIER_NON_3GPP)
                                     print('KN3IWF', toHex(self.kn3iwf))
                                     
-                            print(toHex(self.eap_payload_response))                         
+                            print(toHex(self.eap_payload_response))
 
             if eap_received == False:
-                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'                                                       
+                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'
             elif nas_received == False:
                 return MANDATORY_INFORMATION_MISSING,'NO NAS PAYLOAD RECEIVED' 
             else:
@@ -3901,19 +3902,19 @@ class nwu_swu():
         self.message_id_request += 1
         packet = self.create_IKE_AUTH_2_NWU()
         self.send_data(packet)
-        print('sending IKE_SA_AUTH (4)')        
+        print('sending IKE_SA_AUTH (4)')
 
         try:
         #if True:
             while True:
                 if self.userplane_mode == ESP_PROTOCOL:
-                    packet, address = self.socket.recvfrom(2000)  
+                    packet, address = self.socket.recvfrom(2000)
                     self.decode_ike(packet)
-                    if self.ike_decoded_ok == True: break                
+                    if self.ike_decoded_ok == True: break
                 else:
                     packet, address = self.socket_nat.recvfrom(2000)  
                     self.decode_ike(packet[4:])
-                    if self.ike_decoded_ok == True: break                     
+                    if self.ike_decoded_ok == True: break
                 
         except: #timeout
             return TIMEOUT,'TIMEOUT' 
@@ -3942,7 +3943,7 @@ class nwu_swu():
                         self.AUTH_payload = h.finalize() 
                                         
             if eap_received == False:
-                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'                                                       
+                return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'
             else:
                 return OK,''
         else:
@@ -3953,7 +3954,7 @@ class nwu_swu():
         self.message_id_request += 1
         packet = self.create_IKE_AUTH_3_NWU()
         self.send_data(packet)
-        print('sending IKE_SA_AUTH (5)')        
+        print('sending IKE_SA_AUTH (5)')
 
         try:
         #if True:
@@ -3961,18 +3962,18 @@ class nwu_swu():
                 if self.userplane_mode == ESP_PROTOCOL:
                     packet, address = self.socket.recvfrom(2000)  
                     self.decode_ike(packet)
-                    if self.ike_decoded_ok == True: break                
+                    if self.ike_decoded_ok == True: break
                 else:
                     packet, address = self.socket_nat.recvfrom(2000)  
                     self.decode_ike(packet[4:])
-                    if self.ike_decoded_ok == True: break                     
+                    if self.ike_decoded_ok == True: break
                 
         except: #timeout
             return TIMEOUT,'TIMEOUT' 
 
 
         if self.ike_decoded_header['exchange_type'] == IKE_AUTH and self.decoded_payload[0][0] == SK:
-            print('received IKE_AUTH (5)')              
+            print('received IKE_AUTH (5)')
             for i in self.decoded_payload[0][1]:
                 
                 if i[0] == N:    #protocol_id, notify_message_type, spi, notification_data
@@ -3985,19 +3986,19 @@ class nwu_swu():
                         self.nas_tcp_port = struct.unpack('!H',i[1][3])[0]
                         print('NAS TCP PORT',self.nas_tcp_port)
                         
-                elif i[0] == CP:               
+                elif i[0] == CP:
                     if i[1][0] == CFG_REPLY:
                         self.ip_address_list = self.get_cp_attribute_value(i[1][1],INTERNAL_IP4_ADDRESS)
                         print('IPV4 ADDRESS', self.ip_address_list)       
                         if self.ip_address_list == [] and self.ipv6_address_list == []:
-                            return OTHER_ERROR,'NO IP ADDRESS (IPV4 or IPV6)'      
+                            return OTHER_ERROR,'NO IP ADDRESS (IPV4 or IPV6)'
                         elif self.ip_address_list[-1] != '0.0.0.0':   #get last, or first if only one ipv4 (good for epdg and free5Gc)
                             self.tunnel_ipv4_address = self.ip_address_list[-1]
                             print('TUNNEL IP FOR TCP',self.tunnel_ipv4_address)
                                                      
                     else:
                         #check error
-                        return OTHER_ERROR,'NO CP REPLY'                     
+                        return OTHER_ERROR,'NO CP REPLY'
                         
                 elif i[0] == TSI: #
                     pass #should be the TUNNEL IP FOR TCP (INTERNAL_IP_ADDRESS in CP)
@@ -4042,7 +4043,7 @@ class nwu_swu():
             nas_pdu_decrypted = nas_encrypt_func(nas_decoded_encrypted, self.COUNT_DOWN, DIRECTION_DOWN, self.KEY_EA[self.nas_enc_alg], self.nas_enc_alg, BEARER_ID_NAS_CONNECTION_IDENTIFIER_NON_3GPP)                                    
             nas_decoded = nas_decode(nas_pdu_decrypted) 
             print('NAS DECODED', nas_decoded)    
-            message_type = get_nas_ie_by_name(nas_decoded,IE_MESSAGE_TYPE)      
+            message_type = get_nas_ie_by_name(nas_decoded,IE_MESSAGE_TYPE)
             
             if message_type == REGISTRATION_ACCEPT: #
                 print('REGISTRATION ACCEPT message received')
@@ -4082,33 +4083,47 @@ class nwu_swu():
                         pdu_ipv4 = get_nas_ie_by_name(ie_pdu_address_decoded, IE_PDU_SESSION_TYPE__IPV4)
                         pdu_ipv6 = get_nas_ie_by_name(ie_pdu_address_decoded, IE_PDU_SESSION_TYPE__IPV6)
                         
+                        ie_extended_pco = get_nas_ie_by_name(nas_payload_decoded, IE_EXTENDED_PROTOCOL_CONFIGURATIONS_OPTIONS)
+                        ie_extended_pco_decoded = decode_pco(ie_extended_pco)                        
+                        dns_ipv4_list = get_pco_element_by_name(ie_extended_pco_decoded, IE_PCO_PROTOCOL_IDENTIFIER__DNS_SERVER_IPV4_ADDRESS)
+                        dns_ipv6_list = get_pco_element_by_name(ie_extended_pco_decoded, IE_PCO_PROTOCOL_IDENTIFIER__DNS_SERVER_IPV6_ADDRESS)
+                        self.dns_address_list = get_ip_str_from_ip_bytes(dns_ipv4_list)
+                        self.dnsv6_address_list = get_ip_str_from_ip_bytes(dns_ipv6_list)
+                        
                         if pdu_ipv4 is not None:
                             print('USERPLANE SESSION IPV4 ADDRESS', pdu_ipv4)
                             self.userplane_ip_address = pdu_ipv4
                         if pdu_ipv6 is not None:
                             print('USERPLANE SESSION IPV6 ADDRESS', pdu_ipv6)
-                            self.userplane_ipv6_address = pdu_ipv6                            
+                            self.userplane_ipv6_address = pdu_ipv6
+                            
+
+                        if self.dns_address_list is not []:
+                            print('DNS IPV4 ADDRESS LIST', self.dns_address_list)
+                        if self.dnsv6_address_list is not []:
+                            print('DNS IPV6 ADDRESS LIST', self.dnsv6_address_list)
+
                         if pdu_ipv4 is not None or pdu_ipv6 is not None:
                             self.set_routes_nwu_userplane()
                             
                     else:
-                        print('   -> PAYLOAD CONTAINER: MESSAGE TYPE ', message_type)                     
-                    
+                        print('   -> PAYLOAD CONTAINER: MESSAGE TYPE ', message_type)
+                        
             else:
-                print('Received MESSAGE TYPE', message_type)            
+                print('Received MESSAGE TYPE', message_type)
                 
         return message_list
 
 
     def state_connected_nwu(self):
         #set udp 4500 socket (self.socket_nat)
-     
+
         self.set_routes_nwu_tcp()
-    
+
         #set ipsec tunnel handlers
         self.ike_to_ipsec_encoder, self.ipsec_encoder_to_ike = multiprocessing.Pipe()
         self.ike_to_ipsec_decoder, self.ipsec_decoder_to_ike = multiprocessing.Pipe()
-           
+
         #first SA child - signalling SA Child   
         ipsec_input_worker = multiprocessing.Process(target = self.encapsulate_ipsec, args=([self.ipsec_encoder_to_ike],))
         ipsec_input_worker.start()
@@ -5045,13 +5060,13 @@ def main():
 
     [
         [ESP,4],
-        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,128]],
+        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,256]],
         [INTEG,AUTH_HMAC_SHA1_96],
         [ESN,ESN_NO_ESN]
     ],
     [
         [ESP,4],
-        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,256]],
+        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,128]],
         [INTEG,AUTH_HMAC_SHA1_96],
         [ESN,ESN_NO_ESN]
     ]

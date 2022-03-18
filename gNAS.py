@@ -291,6 +291,7 @@ IE_DECODER_5GS_AMF_SET_ID = 40003
 IE_DECODER_5GS_AMF_POINTER = 40004
 IE_DECODER_5GS_5G_TMSI = 40005
 
+
 ######################################################################################################################
 #                                   D  E  C  O  D  E     F  U  N  C  T  I  O  N  S                                   #
 ######################################################################################################################
@@ -629,7 +630,7 @@ def nas_5gs_mm_registration_request(mcc_mnc, imsi, _5gs_registration_type,nas_ke
     emm_list.append((0,'V',bytes([REGISTRATION_REQUEST])))
     emm_list.append((0,'V',bytes([(nas_key_set_identifier<<4) + _5gs_registration_type])))
     emm_list.append((0,'LV-E',encode_suci_null_scheme(mcc_mnc,imsi)))
-    emm_list.append((0x10,'TLV',b'\x07')) 
+    emm_list.append((0x10,'TLV',b'\x06')) 
     emm_list.append((0x2E,'TLV',b'\x80\x20'))  
     return nas_encode(emm_list)
 
@@ -899,5 +900,20 @@ def get_nas_ie_by_name(nas_list, name):
         if i[0] == name:
             return i[1]
     return None
-    
-    
+
+def get_pco_element_by_name(pco_list, name):
+    pco_return_list = []
+    for i in pco_list:
+        if i[0] == name:
+            pco_return_list.append(i[1])
+    return pco_return_list
+
+def get_ip_str_from_ip_bytes(ip_list):
+    return_list = []
+    for i in ip_list:
+        if len(i) == 4:
+            return_list.append(socket.inet_ntop(socket.AF_INET,i))
+        elif len(i) == 16:
+            return_list.append(socket.inet_ntop(socket.AF_INET6,i))
+    return return_list
+  
