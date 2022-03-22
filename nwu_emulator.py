@@ -2193,6 +2193,7 @@ class nwu_swu():
         # dict with ip packet id as key, and paylad as value. When the last fragment for a packet ide is received, that key is removed from the dict.
         # not protected! if last fragment does not come, the first fragments are keepted in memory till the end...
         fragment_buffer = {} 
+        fragmentation_detected = False
         
         while True:
             read_sockets, write_sockets, error_sockets = select.select(socket_list, [], [])
@@ -2217,33 +2218,48 @@ class nwu_swu():
                             if encr_alg_userplane is not None:
                                 decrypted_packet = self.decapsulate_esp_packet(packet,encr_alg_userplane,encr_key_userplane,integ_alg_userplane,integ_key_userplane)
                                 if decrypted_packet is not None:
-                                    #only processes GRE packets:
+                                    #only processes GRE packets:                                                                        
+                                    ip_flag_more_fragments = (decrypted_packet[6]//32) % 2
+                                    
                                     if decrypted_packet[9] == 0x2F:
-                                        complete_packet = None
-                                        ip_identification = decrypted_packet[4:6]
-                                        ip_flag_more_fragments = (decrypted_packet[6]//32) % 2
-                                        ip_fragment_offset = (decrypted_packet[6] % 32) * 256 + decrypted_packet[7]
+                                        if fragmentation_detected == False: #fast path when there is no fragmentation detected
+
+                                            if ip_flag_more_fragments == 0:                                    
+                                                if (decrypted_packet[20] // 32) % 2 == 0:   
+                                                    os.write(self.tunnel_userplane,decrypted_packet[24:])                                               
+                                                else:                                             
+                                                    os.write(self.tunnel_userplane,decrypted_packet[28:])                                     
+                                            elif ip_flag_more_fragments == 1:
+                                                fragmentation_detected = True
+                                                print('Fragmentation detected in Userplane SA Child!')
+                                                                                                             
+                                        if fragmentation_detected == True:                                     
+                                     
+                                            ip_fragment_offset = (decrypted_packet[6] % 32) * 256 + decrypted_packet[7]
                                         
-                                        if ip_flag_more_fragments == 1 and ip_fragment_offset == 0: #first fragment
-                                            fragment_buffer[ip_identification] = decrypted_packet[20:]
-                                        elif ip_flag_more_fragments == 1 and ip_fragment_offset != 0: #more fragments to come
-                                            fragment_buffer[ip_identification] += decrypted_packet[20:]
-                                        elif ip_flag_more_fragments == 0 and ip_fragment_offset != 0: #last fragment   
-                                            try:                                        
-                                                complete_packet = fragment_buffer[ip_identification] + decrypted_packet[20:]
-                                                del fragment_buffer[ip_identification]
-                                            except:
-                                                pass
-                                        else:
-                                            complete_packet = decrypted_packet[20:]
-                                
-                                        #complete packet starts with GRE header
-                                        if complete_packet is not None:
-                                            
-                                            if (complete_packet[0] // 32) % 2 == 0:
-                                                os.write(self.tunnel_userplane,complete_packet[4:])                                               
+                                            if ip_flag_more_fragments == 0 and ip_fragment_offset == 0: #not fragment #first check fast path
+                                                if (decrypted_packet[20] // 32) % 2 == 0:
+                                                    os.write(self.tunnel_userplane,decrypted_packet[24:])                                               
+                                                else:
+                                                    os.write(self.tunnel_userplane,decrypted_packet[28:])                                              
                                             else:
-                                                os.write(self.tunnel_userplane,complete_packet[8:])                                      
+                                                ip_identification = decrypted_packet[4:6]                                              
+                                                if ip_flag_more_fragments == 1 and ip_fragment_offset == 0: #first fragment
+                                                    fragment_buffer[ip_identification] = decrypted_packet[20:]
+                                                elif ip_flag_more_fragments == 1 and ip_fragment_offset != 0: #more fragments to come
+                                                    fragment_buffer[ip_identification] += decrypted_packet[20:]
+                                                elif ip_flag_more_fragments == 0 and ip_fragment_offset != 0: #last fragment   
+                                                    try:                                        
+                                                        complete_packet = fragment_buffer[ip_identification] + decrypted_packet[20:]
+                                                        #complete packet starts with GRE header                                       
+                                                        if (complete_packet[0] // 32) % 2 == 0:
+                                                            os.write(self.tunnel_userplane,complete_packet[4:])                                               
+                                                        else:
+                                                            os.write(self.tunnel_userplane,complete_packet[8:]) 
+                                                        del fragment_buffer[ip_identification]
+                                                    except:
+                                                        pass
+                                     
                                         
                         
                 elif sock == self.socket_esp:
@@ -2261,33 +2277,46 @@ class nwu_swu():
                             if encr_alg_userplane is not None:
                                 decrypted_packet = self.decapsulate_esp_packet(packet[20:],encr_alg_userplane,encr_key_userplane,integ_alg_userplane,integ_key_userplane)
                                 if decrypted_packet is not None:
-                                    #only processes GRE packets:
+                                    #only processes GRE packets:                                                                        
+                                    ip_flag_more_fragments = (decrypted_packet[6]//32) % 2
+                                    
                                     if decrypted_packet[9] == 0x2F:
-                                        complete_packet = None
-                                        ip_identification = decrypted_packet[4:6]
-                                        ip_flag_more_fragments = (decrypted_packet[6]//32) % 2
-                                        ip_fragment_offset = (decrypted_packet[6] % 32) * 256 + decrypted_packet[7]
+
+                                        if fragmentation_detected == False: #fast path when there is no fragmentation detected
+                                            if ip_flag_more_fragments == 0:                                    
+                                                if (decrypted_packet[20] // 32) % 2 == 0:                                                   
+                                                    os.write(self.tunnel_userplane,decrypted_packet[24:])                                               
+                                                else:                                                                                                   
+                                                    os.write(self.tunnel_userplane,decrypted_packet[28:])                                     
+                                            elif ip_flag_more_fragments == 1:
+                                                fragmentation_detected = True
+                                                print('Fragmentation detected in Userplane SA Child!')
+                                                                                                             
+                                        if fragmentation_detected == True:                                                                         
+                                            ip_fragment_offset = (decrypted_packet[6] % 32) * 256 + decrypted_packet[7]
                                         
-                                        if ip_flag_more_fragments == 1 and ip_fragment_offset == 0: #first fragment
-                                            fragment_buffer[ip_identification] = decrypted_packet[20:]
-                                        elif ip_flag_more_fragments == 1 and ip_fragment_offset != 0: #more fragments to come
-                                            fragment_buffer[ip_identification] += decrypted_packet[20:]
-                                        elif ip_flag_more_fragments == 0 and ip_fragment_offset != 0: #last fragment   
-                                            try:                                        
-                                                complete_packet = fragment_buffer[ip_identification] + decrypted_packet[20:]
-                                                del fragment_buffer[ip_identification]
-                                            except:
-                                                pass
-                                        else:
-                                            complete_packet = decrypted_packet[20:]
-                                
-                                        #complete packet starts with GRE header
-                                        if complete_packet is not None:
-                                            
-                                            if (complete_packet[0] // 32) % 2 == 0:
-                                                os.write(self.tunnel_userplane,complete_packet[4:])                                               
+                                            if ip_flag_more_fragments == 0 and ip_fragment_offset == 0: #not fragment #first check fast path
+                                                if (decrypted_packet[20] // 32) % 2 == 0:
+                                                    os.write(self.tunnel_userplane,decrypted_packet[24:])                                               
+                                                else:
+                                                    os.write(self.tunnel_userplane,decrypted_packet[28:])                                              
                                             else:
-                                                os.write(self.tunnel_userplane,complete_packet[8:])  
+                                                ip_identification = decrypted_packet[4:6]                                              
+                                                if ip_flag_more_fragments == 1 and ip_fragment_offset == 0: #first fragment
+                                                    fragment_buffer[ip_identification] = decrypted_packet[20:]
+                                                elif ip_flag_more_fragments == 1 and ip_fragment_offset != 0: #more fragments to come
+                                                    fragment_buffer[ip_identification] += decrypted_packet[20:]
+                                                elif ip_flag_more_fragments == 0 and ip_fragment_offset != 0: #last fragment   
+                                                    try:                                        
+                                                        complete_packet = fragment_buffer[ip_identification] + decrypted_packet[20:]
+                                                        #complete packet starts with GRE header                                       
+                                                        if (complete_packet[0] // 32) % 2 == 0:
+                                                            os.write(self.tunnel_userplane,complete_packet[4:])                                               
+                                                        else:
+                                                            os.write(self.tunnel_userplane,complete_packet[8:]) 
+                                                        del fragment_buffer[ip_identification]
+                                                    except:
+                                                        pass
                                                 
                
                 elif sock == pipe_ike:
@@ -4569,6 +4598,29 @@ def get_ip_header_with_checksum(source_address, destination_address, protocol, p
     return h 
 
 
+def tcp_udp_checksum_correction(ip_packet):
+
+    if ip_packet[9] ==  6: #tcp
+        ip_header_length = (ip_packet[0] % 16) * 4
+        tcp_packet = ip_packet[ip_header_length:]
+        len_tcp_packet = struct.pack("!H", len(tcp_packet))
+        pseudo_header_plus_tcp_packet = ip_packet[12:20] + b'\x00\x06' + len_tcp_packet + tcp_packet[0:16] + b'\x00\x00' + tcp_packet[18:]
+        tcp_checksum = ip_checksum(pseudo_header_plus_tcp_packet, tcp_udp=True)
+        
+        return ip_packet[0:ip_header_length] +  tcp_packet[0:16] + tcp_checksum + tcp_packet[18:]
+    
+    elif ip_packet[9] ==  17: #udp
+        ip_header_length = (ip_packet[0] % 16) * 4
+        udp_packet = ip_packet[ip_header_length:]
+        len_udp_packet = struct.pack("!H", len(udp_packet))
+        pseudo_header_plus_udp_packet = ip_packet[12:20] + b'\x00\x11' + len_udp_packet + udp_packet[0:6] + b'\x00\x00' + udp_packet[8:]
+        udp_checksum = ip_checksum(pseudo_header_plus_udp_packet, tcp_udp=True)
+        
+        return ip_packet[0:ip_header_length] +  udp_packet[0:6] + udp_checksum + udp_packet[8:]
+    else:
+        return ip_packet
+
+
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
 # Name:        checksum.py
@@ -4579,8 +4631,11 @@ def get_ip_header_with_checksum(source_address, destination_address, protocol, p
 #
 # Description: Calculates the checksum for an IP header
 #-------------------------------------------------------------------------------
-def ip_checksum(ip_header):
-    
+def ip_checksum(ip_header, tcp_udp = False):
+    if tcp_udp == True:
+        if len(ip_header) % 2 == 1:
+            ip_header += b'\x00'
+        
     cksum = 0
     pointer = 0
     size = len(ip_header)
