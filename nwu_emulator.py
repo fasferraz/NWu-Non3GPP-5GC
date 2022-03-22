@@ -473,7 +473,7 @@ ROLE_RESPONDER = 0
 
 class nwu_swu():
 
-    def __init__(self, source_address,epdg_address,apn,modem,default_gateway,mcc,mnc,imsi,ki,op,opc,interface_type,imei,free5gc,free5gc_userplane_ip_address,netns):
+    def __init__(self, source_address,epdg_address,apn,modem,default_gateway,mcc,mnc,imsi,ki,op,opc,interface_type,imei,free5gc,free5gc_userplane_ip_address,netns,userplane_tunnel_mtu):
         self.source_address = source_address
         self.epdg_address = epdg_address
         self.apn = apn
@@ -496,6 +496,7 @@ class nwu_swu():
         self.dnsv6_address_list = []
 
         self.netns_name = netns
+        self.userplane_tunnel_mtu = userplane_tunnel_mtu
         
         self.COUNT_UP = -1
         
@@ -1812,11 +1813,6 @@ class nwu_swu():
                     subprocess.call("echo 'nameserver " + i +"' >> /etc/resolv.conf", shell=True)    
 
 
-
-
- 
-
-
     def set_routes_nwu_tcp(self):
     
         self.tunnel_userplane = self.open_tun(TUNNEL_ID_NWU_USERPLANE_DATA)  
@@ -1860,6 +1856,11 @@ class nwu_swu():
 
         if userplane_ip_address is not None:
             self.exec_in_netns("ip addr add " + userplane_ip_address + "/32 dev " + self.tun_device)
+            if self.userplane_tunnel_mtu is not None:
+                try:
+                    self.exec_in_netns("ip link set dev %s mtu %s" % (self.tun_device, self.userplane_tunnel_mtu))
+                except:
+                    pass
             #set host route, only  required if no netns
             if not self.netns_name:
                 if self.default_gateway is None:
@@ -5151,6 +5152,7 @@ def main():
     parser.add_option("-u", "--userplane-ip-address", dest="free5gc_userplane_ip_address", help="userplane IP address (for non compliant free5gc N3IWF)")  
 
     parser.add_option("-n", "--netns", dest="netns", help="Name of network namespace for tun device")    
+    parser.add_option("-U", "--userplane-mtu", dest="userplane_tunnel_mtu", help="userplane tunnel MTU")    
     
     (options, args) = parser.parse_args()
     
@@ -5176,7 +5178,7 @@ def main():
     a = nwu_swu(options.source_addr,destination_addr,options.apn,options.modem,
         options.gateway_ip_address,options.mcc,options.mnc,options.imsi,options.ki,
         options.op,options.opc,options.interface_type,options.imei,
-        options.free5gc,options.free5gc_userplane_ip_address,options.netns)
+        options.free5gc,options.free5gc_userplane_ip_address,options.netns,options.userplane_tunnel_mtu)
 
     if options.imsi == DEFAULT_IMSI: a.get_identity()
     a.set_sa_list(sa_list)
