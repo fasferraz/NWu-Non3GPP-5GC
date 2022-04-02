@@ -15,12 +15,16 @@ from optparse import OptionParser
 from binascii import hexlify, unhexlify
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import dh
+from cryptography.hazmat.primitives.asymmetric import dh, padding
 from cryptography.hazmat.primitives import hashes, hmac
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from Crypto.Cipher import AES
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography import exceptions
 
 from smartcard.System import readers
 from smartcard.util import toHexString,toBytes
@@ -473,7 +477,7 @@ ROLE_RESPONDER = 0
 
 class nwu_swu():
 
-    def __init__(self, source_address,epdg_address,apn,modem,default_gateway,mcc,mnc,imsi,ki,op,opc,interface_type,imei,free5gc,free5gc_userplane_ip_address,netns,userplane_tunnel_mtu):
+    def __init__(self, source_address,epdg_address,apn,modem,default_gateway,mcc,mnc,imsi,ki,op,opc,interface_type,imei,free5gc,free5gc_userplane_ip_address,netns,userplane_tunnel_mtu,ca_certificate_pubkey):
         self.source_address = source_address
         self.epdg_address = epdg_address
         self.apn = apn
@@ -497,6 +501,7 @@ class nwu_swu():
 
         self.netns_name = netns
         self.userplane_tunnel_mtu = userplane_tunnel_mtu
+        self.ca_certificate_pubkey = ca_certificate_pubkey
         
         self.COUNT_UP = -1
         
@@ -540,7 +545,8 @@ class nwu_swu():
         if self.interface_type == NWU: self.set_identification(IDI,ID_KEY_ID,self.return_random_bytes(16)) #24.502 7.3.2.1
         
 #        if self.interface_type == SWU: self.set_identification(IDR,ID_FQDN, self.apn + '.apn.epc.mnc' + self.mnc + '.mcc' + self.mcc + '.3gppnetwork.org')
-        if self.interface_type == SWU: self.set_identification(IDR,ID_FQDN, self.apn)
+#        if self.interface_type == SWU: self.set_identification(IDR,ID_FQDN, self.apn)
+        if self.interface_type == SWU: self.set_identification(IDR,ID_KEY_ID, self.apn.encode('utf-8'))
         
         self.ike_decoded_header = {}
         self.decodable_payloads = [
@@ -1615,6 +1621,12 @@ class nwu_swu():
         spi_size = len(spi)
         return bytes([protocol]) + bytes([spi_size]) + struct.pack("!H",notify_message_type) + spi + notification_data
         
+
+    def encode_payload_type_certreq(self):
+        digest = hashes.Hash(hashes.SHA1())
+        digest.update(fromHex(self.ca_certificate_pubkey))    
+        hash = digest.finalize()
+        return b'\x04' + hash        
  
     def encode_payload_type_sk(self,ike_packet):
 
@@ -2655,7 +2667,7 @@ class nwu_swu():
             if cookie == True:
                 payload += self.encode_generic_payload_header(NONE,0,self.nounce)  
             else:            
-                payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_ninr())        
+                payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_ninr())
         else:
             if cookie == True:
                 payload += self.encode_generic_payload_header(N,0,self.nounce)             
@@ -2674,8 +2686,12 @@ class nwu_swu():
         payload += self.encode_generic_payload_header(CP,0,self.encode_payload_type_idr())
         payload += self.encode_generic_payload_header(SA,0,self.encode_payload_type_cp())   
         payload += self.encode_generic_payload_header(TSI,0,self.encode_payload_type_sa(self.sa_list_child))         
-        payload += self.encode_generic_payload_header(TSR,0,self.encode_payload_type_tsi())          
-        payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_tsr())        
+        payload += self.encode_generic_payload_header(TSR,0,self.encode_payload_type_tsi()) 
+        if self.ca_certificate_pubkey is not None:
+            payload += self.encode_generic_payload_header(CERTREQ,0,self.encode_payload_type_tsr())
+            payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_certreq())
+        else:         
+            payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_tsr())        
         packet = self.set_ike_packet_length(header+payload)        
         
         encrypted_and_integrity_packet = self.encode_payload_type_sk(packet)     
@@ -2867,16 +2883,17 @@ class nwu_swu():
             while True:
                 if self.userplane_mode == ESP_PROTOCOL:
                     packet, address = self.socket.recvfrom(2000)  
+                    self.AUTH_SA_INIT_received_packet = packet #needed for AUTH check in state 4
                     self.decode_ike(packet)
                     if self.ike_decoded_ok == True: break                
                 else:                 
-                    packet, address = self.socket_nat.recvfrom(2000)                     
+                    packet, address = self.socket_nat.recvfrom(2000)    
+                    self.AUTH_SA_INIT_received_packet = packet[4:] #needed for AUTH check in state 4                    
                     self.decode_ike(packet[4:])
                     if self.ike_decoded_ok == True: break                     
                 
         except: #timeout          
-            return TIMEOUT,'TIMEOUT'
-        
+            return TIMEOUT,'TIMEOUT'       
         
         if self.ike_decoded_header['exchange_type'] == IKE_SA_INIT:
             print('received IKE_SA_INIT')        
@@ -2976,7 +2993,11 @@ class nwu_swu():
                         #add imei in next auth
                         
                     elif i[1][1]<16384: #error
-                        return OTHER_ERROR,str(i[1][1])
+                        return OTHER_ERROR,str(i[1][1])                        
+
+                elif i[0] == IDR:
+                    self.identification_responder = (i[1][0], i[1][1])
+                        
                 elif i[0] == EAP:
    
                     if i[1][0] in (EAP_REQUEST,) and i[1][2] in (EAP_AKA,):
@@ -3086,8 +3107,56 @@ class nwu_swu():
                                     
                             else:
                                 return OTHER_ERROR,'NO RAND/AUTN IN EAP'
-
+                elif i[0] == CERT:
+                    if i[1][0] == 4:     
+                                               
+                        cert = x509.load_der_x509_certificate(i[1][1])
+                        cert_val = cert.public_bytes(serialization.Encoding.PEM)
+                        print('CERTIFICATE:\n',cert_val.decode('utf-8'))
+                        cert_key = cert.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo)   
+                        public_key = cert.public_key()                        
+                        
+                elif i[0] == AUTH:
+                    if i[1][0] == RSA_DIGITAL_SIGNATURE:
+                        signature = i[1][1]
+                        print('RECEIVED AUTH (RSA Signature)', toHex(signature), '\n')
+                   
+                        #to check received AUTH in state 2 for CERTIFICATE
+                        hash = self.prf_function.get(self.negotiated_prf) 
+                        h = hmac.HMAC(self.SK_PR,hash)
+                        #h.update(bytes([self.identification_responder[0]]) + b'\x00'*3 + self.identification_responder[1].encode('utf-8'))
+                        h.update(bytes([self.identification_responder[0]]) + b'\x00'*3 + self.identification_responder[1])
+                        hash_result = h.finalize() 
+                        ResponderSignedOctets  = self.AUTH_SA_INIT_received_packet + self.nounce + hash_result
+                                          
+                        try:
+                            public_key.verify(signature, ResponderSignedOctets, padding.PKCS1v15(), hashes.SHA1())
+                            print("The signature is valid.\n")
+                        except exceptions.InvalidSignature:
+                            print("The signature is not valid.\n")
+                        except:
+                            print("Unable to verify the signature.\n")                        
+                                         
+                        
             if eap_received == True:
+            
+                #to check received AUTH in state 4
+                hash = self.prf_function.get(self.negotiated_prf) 
+                h = hmac.HMAC(self.SK_PR,hash)
+                #h.update(bytes([self.identification_responder[0]]) + b'\x00'*3 + self.identification_responder[1].encode('utf-8'))
+                h.update(bytes([self.identification_responder[0]]) + b'\x00'*3 + self.identification_responder[1])                
+                hash_result = h.finalize() 
+                ResponderSignedOctets = self.AUTH_SA_INIT_received_packet + self.nounce + hash_result
+                
+                keypad = b'Key Pad for IKEv2'
+                h = hmac.HMAC(self.MSK,hash)
+                h.update(keypad)
+                hash_result = h.finalize() 
+                h = hmac.HMAC(hash_result,hash)
+                h.update(ResponderSignedOctets)
+                self.AUTH_payload_expected = h.finalize()             
+                        
+            
                 return OK,''               
             else:
                 return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'              
@@ -3131,7 +3200,7 @@ class nwu_swu():
                     
                         hash = self.prf_function.get(self.negotiated_prf) 
                         h = hmac.HMAC(self.SK_PI,hash)
-                        h.update(bytes([self.identification_initiator[0]]) + b'\x00'*3 + self.identification_initiator[1].encode('utf-8'))
+                        h.update(bytes([self.identification_initiator[0]]) + b'\x00'*3 + self.identification_initiator[1].encode('utf-8'))                    
                         hash_result = h.finalize() 
                         self.AUTH_SA_INIT_packet += self.nounce_received + hash_result
                         
@@ -3141,7 +3210,7 @@ class nwu_swu():
                         hash_result = h.finalize() 
                         h = hmac.HMAC(hash_result,hash)
                         h.update(self.AUTH_SA_INIT_packet)
-                        self.AUTH_payload = h.finalize()                        
+                        self.AUTH_payload = h.finalize()                         
                         
                     elif i[1][0] in (EAP_REQUEST,) and i[1][2] in (EAP_AKA,):
                         if i[1][3] in (AKA_Challenge,):
@@ -3285,6 +3354,11 @@ class nwu_swu():
                         print('IPSEC INIT SPI',toHex(self.spi_init_child))
                     else:
                         return MANDATORY_INFORMATION_MISSING,'MANDATORY_INFORMATION_MISSING'
+                        
+                elif i[0] == AUTH:
+                    if i[1][0] == SHARED_KEY_MESSAGE_INTEGRITY_CODE:
+                        print('RECEIVED AUTH', toHex(i[1][1]))
+                        print('CALCULATED AUTH', toHex(self.AUTH_payload_expected))
 
             self.generate_keying_material_child()
             return OK,''
@@ -3649,6 +3723,37 @@ class nwu_swu():
                             payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
                             self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
                             print('EAP Payload Response', toHex(self.eap_payload_response))
+
+                elif i[0] == CERT:
+                    if i[1][0] == 4:     
+                                           
+                        cert = x509.load_der_x509_certificate(i[1][1])
+                        cert_val = cert.public_bytes(serialization.Encoding.PEM)
+                        print('CERTIFICATE:\n',cert_val.decode('utf-8'))
+                        cert_key = cert.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo)   
+                        public_key = cert.public_key()                        
+                        
+                elif i[0] == AUTH:
+                    if i[1][0] == RSA_DIGITAL_SIGNATURE:
+                        signature = i[1][1]
+                        print('RECEIVED AUTH (RSA Signature)', toHex(signature), '\n')
+                   
+                        #to check received AUTH in state 2 for CERTIFICATE
+                        hash = self.prf_function.get(self.negotiated_prf) 
+                        h = hmac.HMAC(self.SK_PR,hash)
+                        h.update(bytes([self.identification_responder[0]]) + b'\x00'*3 + self.identification_responder[1])
+                
+                        hash_result = h.finalize() 
+                        ResponderSignedOctets  = self.AUTH_SA_INIT_received_packet + self.nounce + hash_result
+                                                                     
+                        try:
+                            public_key.verify(signature, ResponderSignedOctets, padding.PKCS1v15(), hashes.SHA1())
+                            print("The signature is valid.\n")
+                        except exceptions.InvalidSignature:
+                            print("The signature is not valid.\n")
+                        except:
+                            print("Unable to verify the signature.\n")
+
                     
             if eap_received == True:
                 return OK,''               
@@ -3923,6 +4028,23 @@ class nwu_swu():
             elif nas_received == False:
                 return MANDATORY_INFORMATION_MISSING,'NO NAS PAYLOAD RECEIVED' 
             else:
+            
+                #to check received AUTH in state 6
+                hash = self.prf_function.get(self.negotiated_prf) 
+                h = hmac.HMAC(self.SK_PR,hash)
+                h.update(bytes([self.identification_responder[0]]) + b'\x00'*3 + self.identification_responder[1])
+                
+                hash_result = h.finalize() 
+                ResponderSignedOctets = self.AUTH_SA_INIT_received_packet + self.nounce + hash_result
+                
+                keypad = b'Key Pad for IKEv2'
+                h = hmac.HMAC(self.kn3iwf,hash)
+                h.update(keypad)
+                hash_result = h.finalize() 
+                h = hmac.HMAC(hash_result,hash)
+                h.update(ResponderSignedOctets)
+                self.AUTH_payload_expected = h.finalize()             
+            
                 return OK,''
         else:
             return DECODING_ERROR,'DECODING_ERROR'
@@ -4047,6 +4169,12 @@ class nwu_swu():
                         print('IPSEC PROPOSAL', proposal)
                     else:
                         return MANDATORY_INFORMATION_MISSING,'MANDATORY_INFORMATION_MISSING'
+                 
+                elif i[0] == AUTH:
+                    if i[1][0] == SHARED_KEY_MESSAGE_INTEGRITY_CODE:
+                        print('RECEIVED AUTH', toHex(i[1][1]))
+                        print('CALCULATED AUTH', toHex(self.AUTH_payload_expected))                    
+                        
 
             self.generate_keying_material_child()
             return OK,''               
@@ -5046,7 +5174,7 @@ def main():
        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,128]],
        [PRF,PRF_HMAC_SHA1],
        [INTEG,AUTH_HMAC_SHA1_96],
-       [D_H,MODP_2048_bit] 
+       [D_H,MODP_1024_bit] 
     ]    ,
     
     [
@@ -5054,7 +5182,7 @@ def main():
        [ENCR,ENCR_AES_CBC,[KEY_LENGTH,128]],
        [PRF,PRF_HMAC_SHA1],
        [INTEG,AUTH_HMAC_SHA1_96],
-       [D_H,MODP_1024_bit]  
+       [D_H,MODP_2048_bit]  
     ]
   
     ]
@@ -5153,6 +5281,8 @@ def main():
 
     parser.add_option("-n", "--netns", dest="netns", help="Name of network namespace for tun device")    
     parser.add_option("-U", "--userplane-mtu", dest="userplane_tunnel_mtu", help="userplane tunnel MTU")    
+
+    parser.add_option("-k", "--ca-certificate-public-key", dest="ca_certificate_pubkey", help="CA Certificate SubjectPublicKeyInfo bytes (in hex digits)") 
     
     (options, args) = parser.parse_args()
     
@@ -5178,7 +5308,8 @@ def main():
     a = nwu_swu(options.source_addr,destination_addr,options.apn,options.modem,
         options.gateway_ip_address,options.mcc,options.mnc,options.imsi,options.ki,
         options.op,options.opc,options.interface_type,options.imei,
-        options.free5gc,options.free5gc_userplane_ip_address,options.netns,options.userplane_tunnel_mtu)
+        options.free5gc,options.free5gc_userplane_ip_address,options.netns,
+        options.userplane_tunnel_mtu,options.ca_certificate_pubkey)
 
     if options.imsi == DEFAULT_IMSI: a.get_identity()
     a.set_sa_list(sa_list)
