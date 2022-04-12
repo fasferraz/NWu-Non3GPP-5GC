@@ -706,4 +706,13 @@ root@ubuntu:/home/fabricio#
    - If the implementation expects an octet for PAD LENGTH this variable should be equal to 1.
 
 
-by Fabricio - 2021
+# Update 4:
+- Certificate request (CERTREQ) and validation added (option -k) for both modes (SWu and NWu). 
+- You need to insert the CA Certificate SubjectPublicKeyInfo bytes in hex digits. if you have a CA certificate, you can extract that information like this (ex. cli for a certificate called ca.cert.pem.crt in PEM format):
+```
+openssl x509 -in ca.cert.pem.crt -pubkey -noout | openssl pkey -pubin -outform der | xxd -ps -c 300
+```
+
+- Received AUTH and expected received AUTH are now displayed in the output log.
+
+by Fabricio - 2022
