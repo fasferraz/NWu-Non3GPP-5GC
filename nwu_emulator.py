@@ -1787,6 +1787,12 @@ class nwu_swu():
             # moving to netns brings device down again
             self.exec_in_netns("ip link set dev %s up" % (self.tun_device))
 
+        if self.userplane_tunnel_mtu is not None:
+            try:
+                self.exec_in_netns("ip link set dev %s mtu %s" % (self.tun_device, self.userplane_tunnel_mtu))
+            except:
+                pass
+
         if self.ip_address_list != []:
             self.exec_in_netns("ip addr add " + self.ip_address_list[0] + "/32 dev " + self.tun_device)
             #set host route, only  required if no netns
@@ -1866,13 +1872,15 @@ class nwu_swu():
             # moving to netns brings device down again
             self.exec_in_netns("ip link set dev %s up" % (self.tun_device))
 
+        if self.userplane_tunnel_mtu is not None:
+            try:
+                self.exec_in_netns("ip link set dev %s mtu %s" % (self.tun_device, self.userplane_tunnel_mtu))
+            except:
+                pass
+
         if userplane_ip_address is not None:
             self.exec_in_netns("ip addr add " + userplane_ip_address + "/32 dev " + self.tun_device)
-            if self.userplane_tunnel_mtu is not None:
-                try:
-                    self.exec_in_netns("ip link set dev %s mtu %s" % (self.tun_device, self.userplane_tunnel_mtu))
-                except:
-                    pass
+
             #set host route, only  required if no netns
             if not self.netns_name:
                 if self.default_gateway is None:
@@ -2834,8 +2842,12 @@ class nwu_swu():
         payload = self.encode_generic_payload_header(CP,0,self.encode_payload_type_idi()) # IDr is not sent.      
         payload += self.encode_generic_payload_header(SA,0,self.encode_payload_type_cp())   
         payload += self.encode_generic_payload_header(TSI,0,self.encode_payload_type_sa(self.sa_list_child))         
-        payload += self.encode_generic_payload_header(TSR,0,self.encode_payload_type_tsi())          
-        payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_tsr())        
+        payload += self.encode_generic_payload_header(TSR,0,self.encode_payload_type_tsi())  
+        if self.ca_certificate_pubkey is not None:
+            payload += self.encode_generic_payload_header(CERTREQ,0,self.encode_payload_type_tsr())
+            payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_certreq())
+        else: 
+            payload += self.encode_generic_payload_header(NONE,0,self.encode_payload_type_tsr())        
         packet = self.set_ike_packet_length(header+payload)        
         
         encrypted_and_integrity_packet = self.encode_payload_type_sk(packet)     
