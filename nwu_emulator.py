@@ -477,7 +477,7 @@ ROLE_RESPONDER = 0
 
 class nwu_swu():
 
-    def __init__(self, source_address,epdg_address,apn,modem,default_gateway,mcc,mnc,imsi,ki,op,opc,interface_type,imei,free5gc,free5gc_userplane_ip_address,netns,userplane_tunnel_mtu,ca_certificate_pubkey):
+    def __init__(self, source_address,epdg_address,apn,modem,default_gateway,mcc,mnc,imsi,ki,op,opc,interface_type,imei,free5gc,free5gc_userplane_ip_address,netns,userplane_tunnel_mtu,ca_certificate_pubkey,handover,guti):
         self.source_address = source_address
         self.epdg_address = epdg_address
         self.apn = apn
@@ -502,6 +502,12 @@ class nwu_swu():
         self.netns_name = netns
         self.userplane_tunnel_mtu = userplane_tunnel_mtu
         self.ca_certificate_pubkey = ca_certificate_pubkey
+        self.handover = handover
+        self.guti = guti
+        try:
+            self.guti_mccmnc, self.guti_amf_region_id, self.guti_amf_set_id, self.guti_amf_pointer, self.guti_5g_tmsi = self.guti.split('-')
+        except:
+            self.guti_mccmnc, self.guti_amf_region_id, self.guti_amf_set_id, self.guti_amf_pointer, self.guti_5g_tmsi = DEFAULT_MCC+DEFAULT_MNC, 0, 0, 0, 0
         
         self.COUNT_UP = -1
         
@@ -3729,8 +3735,11 @@ class nwu_swu():
                                 self.encode_5g_nssai([(S_NSSAI_SST__EMBB,DEFAULT_SST_1), (S_NSSAI_SST__EMBB,DEFAULT_SST_2)]),
                                 self.encode_5g_guami(self.mcc+self.mnc, 0xCA, 0x3F8, 0)
                                 ])
-                            _5gs_registration_type_ie = encode_5gs_registration_type(IE_5GS_REGISTRATION_TYPE__FOR__FOLLOW_ON_REQUEST_PENDING,IE_5GS_REGISTRATION_TYPE__INITIAL_REGISTRATION)                                
-                            nas_pdu = self.encode_eap_nas_pdu(nas_5gs_mm_registration_request(self.mcc + self.mnc, self.imsi,_5gs_registration_type_ie,7))
+                            _5gs_registration_type_ie = encode_5gs_registration_type(IE_5GS_REGISTRATION_TYPE__FOR__FOLLOW_ON_REQUEST_PENDING,IE_5GS_REGISTRATION_TYPE__INITIAL_REGISTRATION)  
+                            if self.guti is not None:
+                                nas_pdu = self.encode_eap_nas_pdu(nas_5gs_mm_registration_request_guti(self.guti_mccmnc, int(self.guti_amf_region_id), int(self.guti_amf_set_id), int(self.guti_amf_pointer), int(self.guti_5g_tmsi),_5gs_registration_type_ie,7))
+                            else:                            
+                                nas_pdu = self.encode_eap_nas_pdu(nas_5gs_mm_registration_request(self.mcc + self.mnc, self.imsi,_5gs_registration_type_ie,7))
                                                    
                             payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
                             self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
@@ -4223,7 +4232,7 @@ class nwu_swu():
                 message_list.append(nas_pdu_response_encrypted_with_hash)
                 print('Preparing REGISTRATION COMPLETE to send...')
 
-                self.nas_pdu_session_id = 5
+                self.nas_pdu_session_id = 1
                 self.nas_pti = 0
                 self.nas_session_type = IE_PDU_SESSION_TYPE__IPV4
                 nas_pdu_session_establishment_request = nas_5gs_sm_pdu_session_establishment_request(self.nas_pdu_session_id,self.nas_pti,
@@ -4231,7 +4240,11 @@ class nwu_swu():
 
                 s_nssai = encode_s_nssai(S_NSSAI_SST__EMBB,ssd=DEFAULT_SST_1)
                 dnn = encode_ddn(self.apn)
-                request_type = IE_REQUEST_TYPE__INITIAL_REQUEST
+                if self.handover == False:
+                    request_type = IE_REQUEST_TYPE__INITIAL_REQUEST
+                else:
+                    request_type = IE_REQUEST_TYPE__EXISTING_PDU_SESSION
+                    
                 nas_pdu_ul_nas_transport = nas_5gs_mm_ul_nas_transport(PAYLOAD_CONTAINER_TYPE__N1_SM_INFORMATION, 
                     nas_pdu_session_establishment_request,self.nas_pdu_session_id, request_type, s_nssai, dnn)
                 nas_pdu_response_encrypted_with_hash = self.encode_and_encrypt_nas(nas_pdu_ul_nas_transport,INTEGRITY_PROTECTED_AND_CIPHERED)
@@ -5296,6 +5309,9 @@ def main():
 
     parser.add_option("-k", "--ca-certificate-public-key", dest="ca_certificate_pubkey", help="CA Certificate SubjectPublicKeyInfo bytes (in hex digits)") 
     
+    parser.add_option("-H", "--handover", action="store_true", dest="handover", default=False, help="to test handover from 3gpp to non-3gpp")
+    parser.add_option("-G", "--guti", dest="guti", help="5G-GUTI in the following format: <MCCMNC>-<AMF Region ID>-<AMF Set ID>-<AMF pointer>-<5G-TMSI>")  
+    
     (options, args) = parser.parse_args()
     
     if options.source_addr is None:
@@ -5321,7 +5337,8 @@ def main():
         options.gateway_ip_address,options.mcc,options.mnc,options.imsi,options.ki,
         options.op,options.opc,options.interface_type,options.imei,
         options.free5gc,options.free5gc_userplane_ip_address,options.netns,
-        options.userplane_tunnel_mtu,options.ca_certificate_pubkey)
+        options.userplane_tunnel_mtu,options.ca_certificate_pubkey,options.handover,
+        options.guti)
 
     if options.imsi == DEFAULT_IMSI: a.get_identity()
     a.set_sa_list(sa_list)

@@ -634,6 +634,16 @@ def nas_5gs_mm_registration_request(mcc_mnc, imsi, _5gs_registration_type,nas_ke
     emm_list.append((0x2E,'TLV',b'\x80\x20'))  
     return nas_encode(emm_list)
 
+def nas_5gs_mm_registration_request_guti(mcc_mnc, amf_region_id, amf_set_id, amf_pointer, _5g_tmsi, _5gs_registration_type,nas_key_set_identifier):
+    emm_list = []
+    emm_list.append((_5GS_MM,PLAIN_5GS_NAS_MESSAGE))
+    emm_list.append((0,'V',bytes([REGISTRATION_REQUEST])))
+    emm_list.append((0,'V',bytes([(nas_key_set_identifier<<4) + _5gs_registration_type])))
+    emm_list.append((0,'LV-E',encode_5g_guti(mcc_mnc, amf_region_id, amf_set_id, amf_pointer, _5g_tmsi)))
+    emm_list.append((0x10,'TLV',b'\x06')) 
+    emm_list.append((0x2E,'TLV',b'\x80\x20'))  
+    return nas_encode(emm_list)
+
 def nas_5gs_mm_authentication_response(res= None, eap=None):
     emm_list = []
     emm_list.append((_5GS_MM,PLAIN_5GS_NAS_MESSAGE))
