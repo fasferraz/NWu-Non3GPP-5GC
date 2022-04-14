@@ -274,7 +274,7 @@ IE_PAYLOAD_CONTAINER_TYPE = 172
 IE_PAYLOAD_CONTAINER = 173
 IE_ADDITIONAL_INFORMATION = 174
 IE_5GMM_CAUSE = 175
-
+IE_IDENTITY_TYPE = 176
 
 IE_DDN__DDN = 14801
 
@@ -502,7 +502,7 @@ def nas_decode_5gs_mm_authentication_reject(ies): #DONE
 
 def nas_decode_5gs_mm_identity_request(ies):
     ies_list = []
-    ies_list.append(("identity type", ies[0] % 16))
+    ies_list.append((IE_IDENTITY_TYPE, ies[0] % 16))
     
     return ies_list 
 
@@ -688,9 +688,17 @@ def nas_5gs_mm_ul_nas_transport(payload_type, payload, pdu_session_id, request_t
     if ddn is not None: emm_list.append((0x25,'TLV',ddn))     
     return nas_encode(emm_list)
     
+def nas_5gs_mm_identity_response_suci(mcc_mnc,imsi):
+    emm_list = []  
+    emm_list.append((_5GS_MM,PLAIN_5GS_NAS_MESSAGE))
+    emm_list.append((0,'V',bytes([IDENTITY_RESPONSE])))
+    emm_list.append((0,'LV-E',encode_suci_null_scheme(mcc_mnc,imsi))) 
+    return nas_encode(emm_list)
+
+
     
 ## Messages: ##   SM     
-    
+   
     
 def nas_5gs_sm_pdu_session_establishment_request(pdu_session_id,pti,integrity_protection,pdu_session_type,always_on,extended_protocol_configurations):
     emm_list = []

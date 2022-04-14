@@ -36,6 +36,7 @@ from CryptoMobile.Milenage import Milenage
 from gNAS import *
 from gSECURITY import *
 
+from datetime import datetime
 
 requests.packages.urllib3.disable_warnings() 
 
@@ -475,6 +476,10 @@ ROLE_INITIATOR = 1
 ROLE_RESPONDER = 0
 
 
+#5GS mobile_identity (underscore variables are not imported (from gNAS import *))
+_5GS_MOBILE_IDENTITY_IE_TYPE_OF_IDENTITY__SUCI = 1
+
+
 class nwu_swu():
 
     def __init__(self, source_address,epdg_address,apn,modem,default_gateway,mcc,mnc,imsi,ki,op,opc,interface_type,imei,free5gc,free5gc_userplane_ip_address,netns,userplane_tunnel_mtu,ca_certificate_pubkey,handover,guti):
@@ -740,33 +745,35 @@ class nwu_swu():
         return encr_alg    
     
     def print_ikev2_decryption_table(self):
-        print('IKEv2 DECRYPTION TABLE INFO (Wireshark):')
-        text = toHex(self.ike_spi_initiator) + ',' + toHex(self.ike_spi_responder) + ','
+        text = 'IKEv2 DECRYPTION TABLE INFO (Wireshark):\n\n'
+        text += toHex(self.ike_spi_initiator) + ',' + toHex(self.ike_spi_responder) + ','
         text += toHex(self.SK_EI) + ',' + toHex(self.SK_ER) + ',"' + self.return_encryption_algorithm_name() + '",'
         text += toHex(self.SK_AI) + ',' + toHex(self.SK_AR) + ',"' + self.return_integrity_algorithm_name() + '"'
-        print(text)
-        text = toHex(self.ike_spi_responder) + ',' + toHex(self.ike_spi_initiator) + ','
+        text += '\n'
+        text += toHex(self.ike_spi_responder) + ',' + toHex(self.ike_spi_initiator) + ','
         text += toHex(self.SK_ER) + ',' + toHex(self.SK_EI) + ',"' + self.return_encryption_algorithm_name() + '",'
         text += toHex(self.SK_AR) + ',' + toHex(self.SK_AI) + ',"' + self.return_integrity_algorithm_name() + '"'
+        text += '\n'
         print(text)
 
 
     def print_esp_sa(self, reverse = False):
-        print('ESP SA INFO (wireshark):')
+        text = 'ESP SA INFO (wireshark):\n\n'
         if reverse == False:
-            text = '"IPv4","' + self.source_address + '","' + self.epdg_address + '","0x' + toHex(self.spi_resp_child)
+            text += '"IPv4","' + self.source_address + '","' + self.epdg_address + '","0x' + toHex(self.spi_resp_child)
         else:
-            text = '"IPv4","' + self.epdg_address + '","' + self.source_address + '","0x' + toHex(self.spi_init_child)
+            text += '"IPv4","' + self.epdg_address + '","' + self.source_address + '","0x' + toHex(self.spi_init_child)
             
         text += '","' + self.return_encryption_algorithm_child_name() + '","0x' + toHex(self.SK_IPSEC_EI)
         text += '","' + self.return_integrity_algorithm_child_name() + '","0x' + toHex(self.SK_IPSEC_AI) + '"'
-        print(text)
+        text += '\n'
         if reverse == False:
-            text = '"IPv4","' + self.epdg_address + '","' + self.source_address + '","0x' + toHex(self.spi_init_child)
+            text += '"IPv4","' + self.epdg_address + '","' + self.source_address + '","0x' + toHex(self.spi_init_child)
         else:
-            text = '"IPv4","' + self.source_address + '","' + self.epdg_address + '","0x' + toHex(self.spi_resp_child)        
+            text += '"IPv4","' + self.source_address + '","' + self.epdg_address + '","0x' + toHex(self.spi_resp_child)        
         text += '","' + self.return_encryption_algorithm_child_name() + '","0x' + toHex(self.SK_IPSEC_ER)
         text += '","' + self.return_integrity_algorithm_child_name() + '","0x' + toHex(self.SK_IPSEC_AR) + '"'
+        text += '\n'
         print(text)
 
        
@@ -1050,7 +1057,7 @@ class nwu_swu():
                     self.ike_decoded_ok = False
                 else:
                     self.ike_decoded_ok = True
-                    print('\nReceived IKE message decoded:')
+                    print('Received IKE message decoded:')
                     print(self.decoded_payload)
         except:
             print('decode failed!')
@@ -3432,7 +3439,7 @@ class nwu_swu():
         isIKE = False
         isESP = False
 
-        print('\nSTATE ePDG STARTED IKE/IPSEC REKEY:\n----------------------------------')     
+        print('\n\nSTATE ePDG STARTED IKE/IPSEC REKEY:\n----------------------------------')     
                          
         print(self.decoded_payload)
         for i in self.decoded_payload[0][1]:
@@ -3463,7 +3470,7 @@ class nwu_swu():
             self.state_ue_create_sa_child() 
 
     def state_ue_create_sa(self,lowest = 0): #IKEv2 REKEY
-        print('\nSTATE UE STARTED IKE REKEY:\n--------------------------')
+        print('\n\nSTATE UE STARTED IKE REKEY:\n--------------------------')
         self.sa_list_negotiated[0][0][1] = 8
         self.sa_list_create_child_sa = self.sa_list_negotiated
                 
@@ -3477,7 +3484,7 @@ class nwu_swu():
         print('sending CREATE_CHILD_SA (IKE)')
 
     def state_ue_create_sa_child(self,lowest = 0): #IPSEC REKEY
-        print('\nSTATE UE STARTED IPSEC REKEY:\n--------------------------')
+        print('\n\nSTATE UE STARTED IPSEC REKEY:\n--------------------------')
 
         self.sa_list_create_child_sa_child = self.sa_list_negotiated_child
                 
@@ -3740,7 +3747,9 @@ class nwu_swu():
                                 nas_pdu = self.encode_eap_nas_pdu(nas_5gs_mm_registration_request_guti(self.guti_mccmnc, int(self.guti_amf_region_id), int(self.guti_amf_set_id), int(self.guti_amf_pointer), int(self.guti_5g_tmsi),_5gs_registration_type_ie,7))
                             else:                            
                                 nas_pdu = self.encode_eap_nas_pdu(nas_5gs_mm_registration_request(self.mcc + self.mnc, self.imsi,_5gs_registration_type_ie,7))
-                                                   
+                            
+                            self.initial_nas = nas_pdu
+                            
                             payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
                             self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
                             print('EAP Payload Response', toHex(self.eap_payload_response))
@@ -3820,142 +3829,157 @@ class nwu_swu():
                             nas_received = True
                             nas_decoded = nas_decode(i[1][4][4])  # nas_pdu
                             print('NAS_DECODED', nas_decoded)
-                            abba = get_nas_ie_by_name(nas_decoded,IE_ABBA)
-                            print('ABBA', toHex(abba))
                             
-                            #Authentication EAP-AKA'
-                            #----------------------
-                            if get_nas_ie_by_name(nas_decoded, IE_EAP_MESSAGE) is not None: 
-                                nas_eap_message_decoded= self.decode_payload_type_eap(get_nas_ie_by_name(nas_decoded, IE_EAP_MESSAGE))
-                                print('NAS EAP MESSAGE',nas_eap_message_decoded)
-                            
-                                RAND = toHex(self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_RAND))
-                                AUTN = toHex(self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_AUTN))
-                                MAC = toHex(self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_MAC))
-                                KDF = self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_KDF)
-                                KDF_INPUT = self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_KDF_INPUT)
-                                print('RAND', RAND)
-                                print('AUTN', AUTN)
-                                print('MAC', MAC)
-                                print('KDF', KDF)
-                                print('KDF_INPUT', KDF_INPUT)
-                                if RAND is not None and AUTN is not None:
-                                    AUTS = None
-                                    RES, CK, IK = return_res_ck_ik(self.com_port,RAND,AUTN,self.ki,self.op,self.opc)
-                                    if RES is not None and CK is None and IK is None:
-                                        #RES is AUTS
-                                        AUTS, RES = RES, None
-                                        print('AUTS', AUTS)
-                                    else:
-                                    
-                                        print('RES',RES)
-                                        print('CK',CK)
-                                        print('IK',IK)
-                                else:
-                                    return MANDATORY_INFORMATION_MISSING,'NO RAND/AUTN RECEIVED'
+                            message_type = get_nas_ie_by_name(nas_decoded,IE_MESSAGE_TYPE)
+                            if message_type == AUTHENTICATION_REQUEST:
+                                print('NAS Received: AUTHENTICATION_REQUEST')
+                                
+                                abba = get_nas_ie_by_name(nas_decoded,IE_ABBA)
+                                print('ABBA', toHex(abba))
+                                
+                                #Authentication EAP-AKA'
+                                #----------------------
+                                if get_nas_ie_by_name(nas_decoded, IE_EAP_MESSAGE) is not None: 
+                                    nas_eap_message_decoded= self.decode_payload_type_eap(get_nas_ie_by_name(nas_decoded, IE_EAP_MESSAGE))
+                                    print('NAS EAP MESSAGE',nas_eap_message_decoded)
+                                
+                                    RAND = toHex(self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_RAND))
+                                    AUTN = toHex(self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_AUTN))
+                                    MAC = toHex(self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_MAC))
+                                    KDF = self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_KDF)
+                                    KDF_INPUT = self.get_eap_aka_attribute_value(nas_eap_message_decoded[4],AT_KDF_INPUT)
+                                    print('RAND', RAND)
+                                    print('AUTN', AUTN)
+                                    print('MAC', MAC)
+                                    print('KDF', KDF)
+                                    print('KDF_INPUT', KDF_INPUT)
+                                    if RAND is not None and AUTN is not None:
+                                        AUTS = None
+                                        RES, CK, IK = return_res_ck_ik(self.com_port,RAND,AUTN,self.ki,self.op,self.opc)
+                                        if RES is not None and CK is None and IK is None:
+                                            #RES is AUTS
+                                            AUTS, RES = RES, None
+                                            print('AUTS', AUTS)
+                                        else:
                                         
-                                if RES is not None:
-                                    self.KENCR, self.KAUT, self.KRE, self.MSK, self.EMSK, self.MK = self.eap_keys_calculation_prime(KDF_INPUT, AUTN, CK, IK)
-                                    print('KENCR',toHex(self.KENCR))
-                                    print('KAUT',toHex(self.KAUT))
-                                    print('KRE',toHex(self.KRE))
-                                    print('MSK',toHex(self.MSK))
-                                    print('EMSK',toHex(self.EMSK))
-
-                                    
-                                    self.KEY_EA = {}
-                                    self.KEY_IA = {}
-                                    self.KEY_EA[0], self.KEY_IA[0] = None, None
-                                    self.kausf = self.EMSK[0:32] #33.501 Section 6.1.3.1 step 10
-                                    print('KAUSF',toHex(self.kausf))
-                                    
-                                    self.kseaf, self.kamf, self.KEY_EA[1],self.KEY_EA[2],self.KEY_EA[3],self.KEY_IA[1],self.KEY_IA[2],self.KEY_IA[3] = return_all_possible_keys_eap_aka_prime(KDF_INPUT,self.kausf,abba,self.imsi, True)
-                              
-                                    
-                                    if self.free5gc == True:                        
-                                        nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('00253203030040') + fromHex(RES) + fromHex('0b050000' + 16*'00')                                                                                   
+                                            print('RES',RES)
+                                            print('CK',CK)
+                                            print('IK',IK)
                                     else:
-                                        nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('00283201000003030040') + fromHex(RES) + fromHex('0b050000' + 16*'00')
+                                        return MANDATORY_INFORMATION_MISSING,'NO RAND/AUTN RECEIVED'
+                                            
+                                    if RES is not None:
+                                        self.KENCR, self.KAUT, self.KRE, self.MSK, self.EMSK, self.MK = self.eap_keys_calculation_prime(KDF_INPUT, AUTN, CK, IK)
+                                        print('KENCR',toHex(self.KENCR))
+                                        print('KAUT',toHex(self.KAUT))
+                                        print('KRE',toHex(self.KRE))
+                                        print('MSK',toHex(self.MSK))
+                                        print('EMSK',toHex(self.EMSK))
                                 
-                                    h = hmac.HMAC(self.KAUT,hashes.SHA256())
-                                    h.update(nas_eap_payload_response)
-                                    hash = h.finalize()[0:16]  
-                                    nas_eap_payload_response = nas_eap_payload_response[:-16] + hash
+                                        
+                                        self.KEY_EA = {}
+                                        self.KEY_IA = {}
+                                        self.KEY_EA[0], self.KEY_IA[0] = None, None
+                                        self.kausf = self.EMSK[0:32] #33.501 Section 6.1.3.1 step 10
+                                        print('KAUSF',toHex(self.kausf))
+                                        
+                                        self.kseaf, self.kamf, self.KEY_EA[1],self.KEY_EA[2],self.KEY_EA[3],self.KEY_IA[1],self.KEY_IA[2],self.KEY_IA[3] = return_all_possible_keys_eap_aka_prime(KDF_INPUT,self.kausf,abba,self.imsi, True)
+                                  
+                                        
+                                        if self.free5gc == True:                        
+                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('00253203030040') + fromHex(RES) + fromHex('0b050000' + 16*'00')                                                                                   
+                                        else:
+                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('00283201000003030040') + fromHex(RES) + fromHex('0b050000' + 16*'00')
+                                    
+                                        h = hmac.HMAC(self.KAUT,hashes.SHA256())
+                                        h.update(nas_eap_payload_response)
+                                        hash = h.finalize()[0:16]  
+                                        nas_eap_payload_response = nas_eap_payload_response[:-16] + hash
+                                    
+                                    if AUTS is not None:
+                                        if self.free5gc == True: #Synch Failure in EAP-AKA' not yet supported in fre5GC
+                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('0019320404') + fromHex(AUTS) + fromHex('1801') + struct.pack("!H",KDF) 
+                                        else:
+                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('001C320400000404') + fromHex(AUTS) + fromHex('1801') + struct.pack("!H",KDF)
                                 
-                                if AUTS is not None:
-                                    if self.free5gc == True: #Synch Failure in EAP-AKA' not yet supported in fre5GC
-                                        nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('0019320404') + fromHex(AUTS) + fromHex('1801') + struct.pack("!H",KDF) 
+                                        print('AUTS EAP', toHex(nas_eap_payload_response))
+                                
+                                    nas_pdu_response = nas_5gs_mm_authentication_response(eap=nas_eap_payload_response)
+                                                                                                 
+                                    an_parameters = b'\x00\x00'
+                                    nas_pdu = self.encode_eap_nas_pdu(nas_pdu_response)
+                                
+                                    payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
+                                    self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
+                                    
+                                    print('EAP RESPONSE', toHex(self.eap_payload_response))   
+                                    if AUTS is not None:
+                                        return SYNCH_FAILURE, 'SYNCH FAILURE'
+                                
+                                     
+                                
+                                #Authentication 5G-AKA
+                                #---------------------
+                                else: 
+                                
+                                    RAND = toHex(get_nas_ie_by_name(nas_decoded,IE_RAND))
+                                    AUTN = toHex(get_nas_ie_by_name(nas_decoded,IE_AUTN))
+                                    print('RAND', RAND)
+                                    print('AUTN', AUTN)
+                                    
+                                    if RAND is not None and AUTN is not None:
+                                        AUTS = None
+                                        RES, CK, IK = return_res_ck_ik(self.com_port,RAND,AUTN,self.ki,self.op,self.opc)
+                                        if RES is not None and CK is None and IK is None:
+                                            #RES is AUTS
+                                            AUTS, RES = RES, None
+                                            print('AUTS', AUTS)
+                                        else:
+                                            print('RES', RES)
+                                            print('CK', CK)
+                                            print('IK', IK)
                                     else:
-                                        nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('001C320400000404') + fromHex(AUTS) + fromHex('1801') + struct.pack("!H",KDF)
-
-                                    print('AUTS EAP', toHex(nas_eap_payload_response))
-  
-                                nas_pdu_response = nas_5gs_mm_authentication_response(eap=nas_eap_payload_response)
-                                self.initial_nas = nas_pdu_response
-                                                                                             
-                                an_parameters = b'\x00\x00'
-                                nas_pdu = self.encode_eap_nas_pdu(nas_pdu_response)
+                                        return MANDATORY_INFORMATION_MISSING,'NO RAND/AUTN RECEIVED'
+                                    
+                                    if RES is not None:
+                                        res_star = return_res_star(self.mcc+self.mnc, RAND, RES, CK, IK)
+                                        print('RES*',toHex(res_star))
+                                        print('HRES*',toHex(return_hres_star(RAND,res_star)))
+                                        self.KEY_EA = {}
+                                        self.KEY_IA = {}
+                                        self.KEY_EA[0], self.KEY_IA[0] = None, None
+                                        self.kausf, self.kseaf, self.kamf, self.KEY_EA[1],self.KEY_EA[2],self.KEY_EA[3],self.KEY_IA[1],self.KEY_IA[2],self.KEY_IA[3] = return_all_possible_keys(self.mcc+self.mnc,AUTN,CK,IK,abba,self.imsi, True)
+                                        
+                                        nas_pdu_response = nas_5gs_mm_authentication_response(res=res_star)
+                                                                  
+                                    if AUTS is not None:
+                                        nas_pdu_response = nas_5gs_mm_authentication_failure(IE_5GMM_CAUSE__SYNCH_FAILURE,fromHex(AUTS))
+                                    
+                                    an_parameters = b'\x00\x00'
+                                    nas_pdu = self.encode_eap_nas_pdu(nas_pdu_response)
+                                    
+                                    payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
+                                    self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
+                                    
+                                    print('EAP RESPONSE', toHex(self.eap_payload_response))
+                                    
+                                    if AUTS is not None:
+                                        return SYNCH_FAILURE, 'SYNCH FAILURE'
                             
-                                payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
-                                self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
-                                
-                                print('EAP RESPONSE', toHex(self.eap_payload_response))   
-                                if AUTS is not None:
-                                    return SYNCH_FAILURE, 'SYNCH FAILURE'
-
-                                 
-
-                            #Authentication 5G-AKA
-                            #---------------------
-                            else: 
-                            
-                                RAND = toHex(get_nas_ie_by_name(nas_decoded,IE_RAND))
-                                AUTN = toHex(get_nas_ie_by_name(nas_decoded,IE_AUTN))
-                                print('RAND', RAND)
-                                print('AUTN', AUTN)
-                                
-                                if RAND is not None and AUTN is not None:
-                                    AUTS = None
-                                    RES, CK, IK = return_res_ck_ik(self.com_port,RAND,AUTN,self.ki,self.op,self.opc)
-                                    if RES is not None and CK is None and IK is None:
-                                        #RES is AUTS
-                                        AUTS, RES = RES, None
-                                        print('AUTS', AUTS)
-                                    else:
-                                        print('RES', RES)
-                                        print('CK', CK)
-                                        print('IK', IK)
-                                else:
-                                    return MANDATORY_INFORMATION_MISSING,'NO RAND/AUTN RECEIVED'
-                                
-                                if RES is not None:
-                                    res_star = return_res_star(self.mcc+self.mnc, RAND, RES, CK, IK)
-                                    print('RES*',toHex(res_star))
-                                    print('HRES*',toHex(return_hres_star(RAND,res_star)))
-                                    self.KEY_EA = {}
-                                    self.KEY_IA = {}
-                                    self.KEY_EA[0], self.KEY_IA[0] = None, None
-                                    self.kausf, self.kseaf, self.kamf, self.KEY_EA[1],self.KEY_EA[2],self.KEY_EA[3],self.KEY_IA[1],self.KEY_IA[2],self.KEY_IA[3] = return_all_possible_keys(self.mcc+self.mnc,AUTN,CK,IK,abba,self.imsi, True)
+                            elif message_type == IDENTITY_REQUEST:
+                                print('NAS Received: IDENTITY_REQUEST')
+                                if get_nas_ie_by_name(nas_decoded, IE_IDENTITY_TYPE) == _5GS_MOBILE_IDENTITY_IE_TYPE_OF_IDENTITY__SUCI:
+                                    nas_pdu_response = nas_5gs_mm_identity_response_suci(self.mcc + self.mnc, self.imsi)
                                     
-                                    nas_pdu_response = nas_5gs_mm_authentication_response(res=res_star)
-                                                              
-                                if AUTS is not None:
-                                    nas_pdu_response = nas_5gs_mm_authentication_failure(IE_5GMM_CAUSE__SYNCH_FAILURE,fromHex(AUTS))
-                                
-                                
-                                self.initial_nas = nas_pdu_response
-                                
-                                an_parameters = b'\x00\x00'
-                                nas_pdu = self.encode_eap_nas_pdu(nas_pdu_response)
-                                
-                                payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
-                                self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
-                                
-                                print('EAP RESPONSE', toHex(self.eap_payload_response))
-                                
-                                if AUTS is not None:
-                                    return SYNCH_FAILURE, 'SYNCH FAILURE'
-                                                       
+                                    an_parameters = b'\x00\x00'
+                                    nas_pdu = self.encode_eap_nas_pdu(nas_pdu_response)
+                                    
+                                    payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
+                                    self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
+                                    
+                                    print('EAP RESPONSE', toHex(self.eap_payload_response))
+                                    
+                                    return REPEAT_STATE,'IDENTITY_REQUEST Received'
               
             if eap_received == False:
                 return MANDATORY_INFORMATION_MISSING,'NO EAP PAYLOAD RECEIVED'
@@ -4012,6 +4036,7 @@ class nwu_swu():
                                 print('NAS DECODED', nas_decoded)        
                                     
                                 if get_nas_ie_by_name(nas_decoded,IE_MESSAGE_TYPE) == SECURITY_MODE_COMMAND:
+                                    print('NAS Received: SECURITY_MODE_COMMAND')
                                     nas_selected_algorithms = get_nas_ie_by_name(nas_decoded,IE_NAS_SECURITY_ALGORITHMS)
                                     self.nas_int_alg = nas_selected_algorithms % 16
                                     self.nas_enc_alg = nas_selected_algorithms // 16
@@ -4204,7 +4229,7 @@ class nwu_swu():
 
 
     def state_7_nwu(self, packet):
-        print('\nSTATE 7:\n-------')
+        print('\n\nSTATE 7:\n-------')
         message_list = []
 
         nas_decoded = nas_decode(packet)  # nas_pdu
@@ -4225,7 +4250,7 @@ class nwu_swu():
             message_type = get_nas_ie_by_name(nas_decoded,IE_MESSAGE_TYPE)
             
             if message_type == REGISTRATION_ACCEPT: #
-                print('REGISTRATION ACCEPT message received')
+                print('NAS Received: REGISTRATION_ACCEPT')
                 self._5g_guti =  decode_5gs_mobile_identity(get_nas_ie_by_name(nas_decoded,IE_5G_GUTI))
                 print('5G-GUTI', self._5g_guti)
                 nas_pdu_response_encrypted_with_hash = self.encode_and_encrypt_nas(nas_5gs_mm_registration_complete(),INTEGRITY_PROTECTED_AND_CIPHERED)
@@ -4252,7 +4277,7 @@ class nwu_swu():
                 print('Preparing UL NAS TRANSPORT message with container PDU SESSION ESTABLISHMENT REQUEST to send...')
             
             elif message_type == DL_NAS_TRANSPORT:
-                print('DL NAS TRANSPORT message received')
+                print('NAS Received: DL_NAS_TRANSPORT')
                 if get_nas_ie_by_name(nas_decoded,IE_PAYLOAD_CONTAINER_TYPE) == PAYLOAD_CONTAINER_TYPE__N1_SM_INFORMATION:
                     payload_container = get_nas_ie_by_name(nas_decoded,IE_PAYLOAD_CONTAINER)
                     nas_payload_decoded = nas_decode(payload_container)
@@ -4260,7 +4285,7 @@ class nwu_swu():
                     print('NAS PAYLOAD DECODED', nas_payload_decoded)
                     
                     if message_type == PDU_SESSION_ESTABLISHMENT_ACCEPT:
-                        print('  -> PAYLOAD CONTAINER: PDU SESSION ESTABLISHMENT ACCEPT message received')
+                        print('  -> NAS PAYLOAD CONTAINER Received: PDU_SESSION_ESTABLISHMENT_ACCEPT')
                         ie_pdu_session_type = get_nas_ie_by_name(nas_payload_decoded, IE_PDU_SESSION_TYPE)
                         ie_pdu_address_decoded = decode_pdu_address(get_nas_ie_by_name(nas_payload_decoded,IE_PDU_ADDRESS))
                         pdu_ipv4 = get_nas_ie_by_name(ie_pdu_address_decoded, IE_PDU_SESSION_TYPE__IPV4)
@@ -4290,10 +4315,10 @@ class nwu_swu():
                             self.set_routes_nwu_userplane()
                             
                     else:
-                        print('   -> PAYLOAD CONTAINER: MESSAGE TYPE ', message_type)
+                        print('   -> NAS PAYLOAD CONTAINER Received: MESSAGE TYPE ', message_type)
                         
             else:
-                print('Received MESSAGE TYPE', message_type)
+                print('NAS Received: MESSAGE TYPE', message_type)
                 
         return message_list
 
@@ -4435,7 +4460,7 @@ class nwu_swu():
         isESP = False
         dh_peer_public_key_bytes  = None
 
-        print('\nSTATE N3IWF SENT A CREATE CHILD SA:\n----------------------------------')     
+        print('\n\nSTATE N3IWF SENT A CREATE CHILD SA:\n----------------------------------')     
                          
         for i in self.decoded_payload[0][1]:
             if i[0] == SA: #
@@ -4484,7 +4509,7 @@ class nwu_swu():
                 self.dh_calculate_shared_key(dh_peer_public_key_bytes, child=True)                
 
         if isESP == True:
-            print('received CREATE_CHILD_SA request IPSEC')                
+            print('Received CREATE_CHILD_SA request IPSEC')                
      
             #answers back with the same proposal, so it uses the same SPI in both directions. Need to decode proposal properly to seee algorithms
             if dh_peer_public_key_bytes is None:
@@ -4563,67 +4588,67 @@ class nwu_swu():
         
             self.iterations -= 1
         
-            print('\nSTATE 1:\n-------')
+            print('\n\nSTATE 1:\n-------')
             result,info = self.state_1()
             if result in (REPEAT_STATE, TIMEOUT): 
                 print(self.errors.get(result),':',info)
-                print('\nSTATE 1 (retry 1):\n------- -------')
+                print('\n\nSTATE 1 (retry 1):\n------- -------')
                 result,info = self.state_1(retry=True)
             elif result in (REPEAT_STATE_COOKIE,):
                 print(self.errors.get(result),':',info)
-                print('\nSTATE 1 (retry 1 with cookie):\n------- -------')            
+                print('\n\nSTATE 1 (retry 1 with cookie):\n------- -------')            
                 result,info = self.state_1(retry=True, cookie=True)                
                 
             if result in (REPEAT_STATE, TIMEOUT): 
                 print(self.errors.get(result),':',info)
-                print('\nSTATE 1: (retry 2)\n------- -------')
+                print('\n\nSTATE 1: (retry 2)\n------- -------')
                 if self.cookie == True:
                     result,info = self.state_1(retry=True, cookie=True)                
                 else:
                     result,info = self.state_1(retry=True)
                
             if result == OK:
-                print('\nSTATE 2:\n-------')
+                print('\n\nSTATE 2:\n-------')
                 result,info = self.state_2_nwu()
             else:
                 print(self.errors.get(result),':',info)
                 continue  
                 
             if result == OK:
-                print('\nSTATE 3:\n-------')
+                print('\n\nSTATE 3:\n-------')
                 result,info = self.state_3_nwu()
             else:
                 print(self.errors.get(result),':',info)
                 continue         
 
-            if result in (OK, SYNCH_FAILURE):
-                if result in (SYNCH_FAILURE,):
+            if result in (OK, SYNCH_FAILURE, REPEAT_STATE):
+                if result in (SYNCH_FAILURE, REPEAT_STATE):
                     print(self.errors.get(result),':',info)
-                    print('\nSTATE 3 (repeat):\n---------------')
+                    print('\n\nSTATE 3 (repeat):\n---------------')
                     result,info = self.state_3_nwu()   
                 if result in (OK,):                    
-                    print('\nSTATE 4:\n-------')
+                    print('\n\nSTATE 4:\n-------')
                     result,info = self.state_4_nwu()
             else:
                 print(self.errors.get(result),':',info)
                 continue            
         
             if result == OK:
-                print('\nSTATE 5:\n-------')
+                print('\n\nSTATE 5:\n-------')
                 result,info = self.state_5_nwu()
             else:
                 print(self.errors.get(result),':',info)
                 continue  
 
             if result == OK:
-                print('\nSTATE 6:\n-------')
+                print('\n\nSTATE 6:\n-------')
                 result,info = self.state_6_nwu()
             else:
                 print(self.errors.get(result),':',info)
                 continue 
 
             if result == OK:
-                print('\nSignaling SA CHILD created. Establishing TCP session towards NAS...\n')
+                print('\n\nSignaling SA CHILD created. Establishing TCP session towards NAS...\n')
                 self.state_connected_nwu()        
             else:
                 print(self.errors.get(result),':',info)
@@ -4644,34 +4669,34 @@ class nwu_swu():
         
             self.iterations -= 1
         
-            print('\nSTATE 1:\n-------')
+            print('\n\nSTATE 1:\n-------')
             result,info = self.state_1()
             if result in (REPEAT_STATE, TIMEOUT): 
                 print(self.errors.get(result),':',info)
-                print('\nSTATE 1 (retry 1):\n------- -------')
+                print('\n\nSTATE 1 (retry 1):\n------- -------')
                 result,info = self.state_1(retry=True)
             elif result in (REPEAT_STATE_COOKIE,):
                 print(self.errors.get(result),':',info)
-                print('\nSTATE 1 (retry 1 with cookie):\n------- -------')            
+                print('\n\nSTATE 1 (retry 1 with cookie):\n------- -------')            
                 result,info = self.state_1(retry=True, cookie=True)
                 
             if result in (REPEAT_STATE, TIMEOUT): 
                 print(self.errors.get(result),':',info)
-                print('\nSTATE 1: (retry 2)\n------- -------')
+                print('\n\nSTATE 1: (retry 2)\n------- -------')
                 if self.cookie == True:
                     result,info = self.state_1(retry=True, cookie=True)                
                 else:
                     result,info = self.state_1(retry=True)
                
             if result == OK:
-                print('\nSTATE 2:\n-------')
+                print('\n\nSTATE 2:\n-------')
                 result,info = self.state_2_swu()
             else:
                 print(self.errors.get(result),':',info)
                 continue                
             
             if result == OK:
-                print('\nSTATE 3:\n-------')
+                print('\n\nSTATE 3:\n-------')
                 result,info = self.state_3_swu()
             else:
                 print(self.errors.get(result),':',info)
@@ -4680,17 +4705,17 @@ class nwu_swu():
             if result in (OK, REPEAT_STATE):
                 if result in (REPEAT_STATE,):
                     print(self.errors.get(result),':',info)
-                    print('\nSTATE 3 (repeat):\n---------------')
+                    print('\n\nSTATE 3 (repeat):\n---------------')
                     result,info = self.state_3_swu()                                    
                 if result in (OK,):
-                    print('\nSTATE 4:\n-------')
+                    print('\n\nSTATE 4:\n-------')
                     result,info = self.state_4_swu()                   
             else:
                 print(self.errors.get(result),':',info)
                 continue 
                 
             if result == OK:
-                print('\nSTATE CONNECTED. Press q to quit, i to rekey ike, c to rekey child sa, r to reauth.\n')
+                print('\n\nSTATE CONNECTED. Press q to quit, i to rekey ike, c to rekey child sa, r to reauth.\n')
                 self.state_connected_swu()        
             else:
                 print(self.errors.get(result),':',info)

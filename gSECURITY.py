@@ -3,7 +3,7 @@ from Crypto.Hash import SHA256
 from CryptoMobile.CM import *
 from binascii import hexlify, unhexlify
 import struct
-
+from datetime import datetime
 
 DIRECTION_DOWN = 1
 DIRECTION_UP =   0
@@ -11,6 +11,22 @@ DIRECTION_UP =   0
 
 BEARER_ID_NAS_CONNECTION_IDENTIFIER_3GPP = 0x1
 BEARER_ID_NAS_CONNECTION_IDENTIFIER_NON_3GPP = 0x2
+
+# print with timestamp information. comment next 4 lines if you don't want timestamp information.
+old_print = print
+def timestamped_print(*args, **kwargs):
+    old_print(bcolors.OKBLUE + '[',datetime.now(),']'+bcolors.ENDC, *args, **kwargs)
+print = timestamped_print
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 def bcd_bytes(chars):  
     bcd_string = ""
