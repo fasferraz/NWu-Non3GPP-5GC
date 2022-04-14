@@ -715,4 +715,17 @@ openssl x509 -in ca.cert.pem.crt -pubkey -noout | openssl pkey -pubin -outform d
 
 - Received AUTH and expected received AUTH are now displayed in the output log.
 
+# Update 5:
+- New 3 options added:
+  - Possibility to define the MTU for the user plane tunnel interface to avoid fragmentation at IPSec or GRE level.
+  - Handover option. PDU Session Establishment Request is done with request type EXISTING_PDU_SESSION. The non-3gpp PDU Session Identity must also match the 3gpp value.
+  - Possibility to use 5G-GUTI in Registraton Request message
+```
+  -U USERPLANE_TUNNEL_MTU, --userplane-mtu=USERPLANE_TUNNEL_MTU
+                        userplane tunnel MTU
+  -H, --handover        to test handover from 3gpp to non-3gpp
+  -G GUTI, --guti=GUTI  5G-GUTI in the following format: <MCCMNC>-<AMF Region
+                        ID>-<AMF Set ID>-<AMF pointer>-<5G-TMSI>
+```
+
 by Fabricio - 2022
