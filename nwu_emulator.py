@@ -120,6 +120,7 @@ TUNNEL_ID_NWU_USERPLANE_DATA = 3
 
 DEFAULT_TCP_SOCKET_NAMESPACE = 'tcp_socket_signalling'
 
+DEFAULT_NUMBER_OF_ITERATIONS = 1
 
 #Interface type
 SWU = 0
@@ -4582,10 +4583,11 @@ class nwu_swu():
 ### FOR NWU: ###
 
     def start_ike_nwu(self):
-        self.iterations = 1
+        self.iterations = DEFAULT_NUMBER_OF_ITERATIONS
         self.cookie = False
         while self.iterations>0:
-        
+            #to reset variables to initial value when restarting
+            if self.iterations < DEFAULT_NUMBER_OF_ITERATIONS: self.set_variables()
             self.iterations -= 1
         
             print('\n\nSTATE 1:\n-------')
@@ -4663,10 +4665,11 @@ class nwu_swu():
 ### FOR SWU: ###    
 
     def start_ike_swu(self):
-        self.iterations = 2
+        self.iterations = DEFAULT_NUMBER_OF_ITERATIONS
         self.cookie = False        
         while self.iterations>0:
-        
+            #to reset variables to initial value when restarting
+            if self.iterations < DEFAULT_NUMBER_OF_ITERATIONS: self.set_variables()
             self.iterations -= 1
         
             print('\n\nSTATE 1:\n-------')
