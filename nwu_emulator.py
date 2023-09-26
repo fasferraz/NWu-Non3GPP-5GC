@@ -943,7 +943,9 @@ class nwu_swu():
         ck_prime, ik_prime = return_ck_prime_ik_prime(access_network, AUTN, CK, IK)    
         print("CK'", toHex(ck_prime))
         print("IK'", toHex(ik_prime))
-        stream = b"EAP-AKA'imsi-" + self.imsi.encode('utf-8') #idi value. already random bytes
+        
+        stream = b"EAP-AKA'" + self.imsi.encode('utf-8') #idi value. already random bytes
+        #stream = b"EAP-AKA'imsi-" + self.imsi.encode('utf-8') #idi value. already random bytes
 
         MK = self.prf_plus(PRF_HMAC_SHA2_256,ik_prime+ck_prime,stream,208)
         print('MK',toHex(MK))
@@ -1253,10 +1255,8 @@ class nwu_swu():
             if data[4] in (EAP_AKA,):
                 return [code,identifier,data[4],data[5],self.decode_eap_attributes(data[8:])] #code, identifier, type, sub type, [attributes list]                
             if data[4] in (EAP_AKA_PRIME,):
-                if self.free5gc == True: #free5gc has an error. They don't include subtype and reserved bytes. after type they put attributes right away...
-                    return [code,identifier,data[4],data[5],self.decode_eap_attributes(data[5:])] #code, identifier, type, sub type, [attributes list]  
-                else:
-                    return [code,identifier,data[4],data[5],self.decode_eap_attributes(data[8:])] #code, identifier, type, sub type, [attributes list]                  
+
+                return [code,identifier,data[4],data[5],self.decode_eap_attributes(data[8:])] #code, identifier, type, sub type, [attributes list]                  
             elif data[4] == EAP_EXPANDED_TYPES:
                 return [code,identifier,data[4],data[4:12],self.decode_eap_expanded_types(code,data[5:])] #code, identifier, type, type+vendorid+vendortype bytes, [expanded_types_decoded]          
             else:
@@ -3887,10 +3887,8 @@ class nwu_swu():
                                         self.kseaf, self.kamf, self.KEY_EA[1],self.KEY_EA[2],self.KEY_EA[3],self.KEY_IA[1],self.KEY_IA[2],self.KEY_IA[3] = return_all_possible_keys_eap_aka_prime(KDF_INPUT,self.kausf,abba,self.imsi, True)
                                   
                                         
-                                        if self.free5gc == True:                        
-                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('00253203030040') + fromHex(RES) + fromHex('0b050000' + 16*'00')                                                                                   
-                                        else:
-                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('00283201000003030040') + fromHex(RES) + fromHex('0b050000' + 16*'00')
+                                        
+                                        nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('00283201000003030040') + fromHex(RES) + fromHex('0b050000' + 16*'00')
                                     
                                         h = hmac.HMAC(self.KAUT,hashes.SHA256())
                                         h.update(nas_eap_payload_response)
@@ -3898,10 +3896,8 @@ class nwu_swu():
                                         nas_eap_payload_response = nas_eap_payload_response[:-16] + hash
                                     
                                     if AUTS is not None:
-                                        if self.free5gc == True: #Synch Failure in EAP-AKA' not yet supported in fre5GC
-                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('0019320404') + fromHex(AUTS) + fromHex('1801') + struct.pack("!H",KDF) 
-                                        else:
-                                            nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('001C320400000404') + fromHex(AUTS) + fromHex('1801') + struct.pack("!H",KDF)
+                                        
+                                        nas_eap_payload_response = bytes([EAP_RESPONSE]) + bytes([nas_eap_message_decoded[1]]) + fromHex('001C320400000404') + fromHex(AUTS) + fromHex('1801') + struct.pack("!H",KDF)
                                 
                                         print('AUTS EAP', toHex(nas_eap_payload_response))
                                 
