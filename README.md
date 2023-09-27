@@ -117,6 +117,24 @@ from gSECURITY import *
 ```
 Note: I added the card.USIM module (https://github.com/mitshell/card) because it handles much better blank USIM cards bought in eBay or AliExprees, than my old USIM interaction functions.
 
+Installation:
+
+```
+sudo apt insatll libpcsclite-dev
+
+pip3 install serial wheel pycrypto  pyscard swig requests cryptography
+
+git clone https://github.com/mitshell/card.git
+cd card
+python3 setup.py install
+cd ..
+
+git clone https://github.com/mitshell/CryptoMobile.git
+cd CryptoMobile/
+python3 setup.py install
+cd ..
+```
+
 
 These are the options currently available when starting the app:
 
