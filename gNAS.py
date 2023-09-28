@@ -749,8 +749,8 @@ def nas_5gs_sm_pdu_session_release_request(pdu_session_id,pti,_5gsm_cause,extend
 
 def decode_additional_5g_security_information(iei): #DONE
     iei_list = []
-    hdp = iei[0] % 4 // 2
-    retrans_initial_nas = iei[0] % 2
+    retrans_initial_nas = iei[0] % 4 // 2
+    hdp = iei[0] % 2
     iei_list.append((IE_ADDITIONAL_5G_SECURITY_INFORMATION__HDP, hdp))
     iei_list.append((IE_ADDITIONAL_5G_SECURITY_INFORMATION__RETRANSMISSION_OF_INITIAL_NAS, retrans_initial_nas))     
     return iei_list
