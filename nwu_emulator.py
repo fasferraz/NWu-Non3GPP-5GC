@@ -110,8 +110,8 @@ DEFAULT_IK = '0123456789ABCDEF0123456789ABCDEF'
 DEFAULT_RES = '0123456789ABCDEF'
 
 DEFAULT_DUMMY_USERPLANE_IPV4_ADDRESS = '60.60.0.1'
-DEFAULT_SST_1 = 0x010203
-DEFAULT_SST_2 = 0x112233
+DEFAULT_SD_1 = 0x010203
+DEFAULT_SD_2 = 0x112233
 
 TUNNEL_ID_SWU = 1
 TUNNEL_ID_NWU_TCP = 2
@@ -1740,8 +1740,10 @@ class nwu_swu():
     def encode_5g_nssai(self,nssai_list): # [(sst1, sd1), (sst2,sd2), etc...] Needs adaptation to support sst only, and also mapped_hplmn_sst and mapped_hplmn_ssd
         snssai = b''
         for i in nssai_list:
-
-            snssai += bytes([4]) + bytes([i[0]]) + struct.pack("!I",i[1])[1:]
+            if i[1] is not None:
+                snssai += bytes([4]) + bytes([i[0]]) + struct.pack("!I",i[1])[1:]
+            else:
+                snssai += bytes([1]) + bytes([i[0]]) 
 
         return (AN_PARAMETER_TYPE_REQUESTED_NSSAI, snssai)                
 
@@ -3740,7 +3742,7 @@ class nwu_swu():
                             
                             an_parameters = self.encode_eap_an_parameters([self.encode_5g_plmnid(self.mcc + self.mnc), 
                                 self.encode_5g_establishment_cause(AN_ESTABLISHMENT_CAUSE_MO_DATA),
-                                self.encode_5g_nssai([(S_NSSAI_SST__EMBB,DEFAULT_SST_1), (S_NSSAI_SST__EMBB,DEFAULT_SST_2)]),
+                                self.encode_5g_nssai([(S_NSSAI_SST__EMBB,DEFAULT_SD_1), (S_NSSAI_SST__EMBB,DEFAULT_SD_2)]),
                                 self.encode_5g_guami(self.mcc+self.mnc, 0xCA, 0x3F8, 0)
                                 ])
                             _5gs_registration_type_ie = encode_5gs_registration_type(IE_5GS_REGISTRATION_TYPE__FOR__FOLLOW_ON_REQUEST_PENDING,IE_5GS_REGISTRATION_TYPE__INITIAL_REGISTRATION)  
@@ -4260,7 +4262,7 @@ class nwu_swu():
                 nas_pdu_session_establishment_request = nas_5gs_sm_pdu_session_establishment_request(self.nas_pdu_session_id,self.nas_pti,
                     IE_INTEGRITY_PROTECTION_MAXIMUM_DATA_RATE__FULL_DATA_RATE,self.nas_session_type,None,encode_pco(self.nas_session_type))
 
-                s_nssai = encode_s_nssai(S_NSSAI_SST__EMBB,ssd=DEFAULT_SST_1)
+                s_nssai = encode_s_nssai(S_NSSAI_SST__EMBB,ssd=DEFAULT_SD_1)
                 dnn = encode_ddn(self.apn)
                 if self.handover == False:
                     request_type = IE_REQUEST_TYPE__INITIAL_REQUEST
@@ -4441,7 +4443,7 @@ class nwu_swu():
 
     def state_delete_pdu_session_release_request(self):
         nas_pdu_session_release_request = nas_5gs_sm_pdu_session_release_request(self.nas_pdu_session_id,self.nas_pti,IE_5GSM_CAUSE__REGULAR_DEACTIVATION,None)
-        s_nssai = encode_s_nssai(S_NSSAI_SST__EMBB,ssd=DEFAULT_SST_1)
+        s_nssai = encode_s_nssai(S_NSSAI_SST__EMBB,ssd=DEFAULT_SD_1)
         dnn = encode_ddn(self.apn)
         request_type = IE_REQUEST_TYPE__EXISTING_PDU_SESSION
         nas_pdu_ul_nas_transport = nas_5gs_mm_ul_nas_transport(PAYLOAD_CONTAINER_TYPE__N1_SM_INFORMATION, 
