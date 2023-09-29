@@ -3751,7 +3751,7 @@ class nwu_swu():
                             else:                            
                                 nas_pdu = self.encode_eap_nas_pdu(nas_5gs_mm_registration_request(self.mcc + self.mnc, self.imsi,_5gs_registration_type_ie,7))
                             
-                            self.initial_nas = nas_pdu
+                            self.initial_nas = nas_pdu[2:]
                             
                             payload_eap_5g = i[1][3] + bytes([EAP_5G_NAS]) + b'\x00' + an_parameters + nas_pdu
                             self.eap_payload_response = bytes([EAP_RESPONSE]) + bytes([self.eap_identifier]) + struct.pack("!H", 4+len(payload_eap_5g)) + payload_eap_5g
@@ -4047,7 +4047,7 @@ class nwu_swu():
                                     if additional_5g_security_information is not None: retrans_initial_nas = get_nas_ie_by_name(decode_additional_5g_security_information(additional_5g_security_information),IE_ADDITIONAL_5G_SECURITY_INFORMATION__RETRANSMISSION_OF_INITIAL_NAS)
                                     aux_imei = self.imei if imeisv_request is IMEISV_REQUESTED else None
                                     aux_nas = self.initial_nas if retrans_initial_nas is RETRANSMISSION_OF_INITIAL_NAS_REQUESTED else None
-                    
+
                     
                                     mac_calculated = nas_hash_func(nas_decoded_encrypted, sqn, DIRECTION_DOWN, self.KEY_IA[self.nas_int_alg], self.nas_int_alg, BEARER_ID_NAS_CONNECTION_IDENTIFIER_NON_3GPP) 
                                     print('MAC Received:', toHex(mac)) 
