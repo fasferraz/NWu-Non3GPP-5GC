@@ -4257,7 +4257,7 @@ class nwu_swu():
                 print('Preparing REGISTRATION COMPLETE to send...')
 
                 self.nas_pdu_session_id = 1
-                self.nas_pti = 0
+                self.nas_pti = 1
                 self.nas_session_type = IE_PDU_SESSION_TYPE__IPV4
                 nas_pdu_session_establishment_request = nas_5gs_sm_pdu_session_establishment_request(self.nas_pdu_session_id,self.nas_pti,
                     IE_INTEGRITY_PROTECTION_MAXIMUM_DATA_RATE__FULL_DATA_RATE,self.nas_session_type,None,encode_pco(self.nas_session_type))
