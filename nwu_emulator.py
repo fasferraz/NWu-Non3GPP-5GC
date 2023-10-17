@@ -2525,7 +2525,7 @@ class nwu_swu():
    
 
     def generate_keying_material_child(self, reverse = False):
-        if self.negotiated_diffie_hellman_group_child is not None:
+        if self.negotiated_diffie_hellman_group_child is not None and self.negotiated_diffie_hellman_group_child != NONE:
             STREAM = self.dh_shared_key_child + self.nounce + self.nounce_received
         else:
             STREAM = self.nounce + self.nounce_received
