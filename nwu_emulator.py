@@ -5218,7 +5218,7 @@ def main():
        [ENCR,ENCR_NULL],
        [PRF,PRF_HMAC_MD5],
        [INTEG,AUTH_HMAC_MD5_96],
-       [D_H,MODP_768_bit] 
+       [D_H,MODP_1024_bit] 
     ]    ,
     [
        [IKE,0],
